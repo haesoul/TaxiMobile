@@ -1,12 +1,25 @@
 import { Record } from 'immutable'
+import { createSelector } from 'reselect'
+import SITE_CONSTANTS from '../../defaultValues'
+import { firstItem } from '../../tools/utils2'
 import { TAction } from '../../types'
 import { EStatuses } from '../../types/types'
+import { configConstants } from '../config'
 import { ActionTypes, IClientOrderState } from './constants'
+import * as util from './util'
+import { polygonsLocationClasses } from './util'
 
-const record = Record<IClientOrderState>({
+const defaultRecord: IClientOrderState = {
+  from: null,
+  fromPolygons: null,
+  fromLoading: false,
+
+  to: null,
+  toPolygons: null,
+  toLoading: false,
+
+  carClass: SITE_CONSTANTS.DEFAULT_CAR_CLASS,
   seats: 1,
-  from: JSON.parse(localStorage.getItem('from') || 'null'),
-  to: JSON.parse(localStorage.getItem('to') || 'null'),
   comments: {
     custom: '',
     flightNumber: '',
@@ -14,34 +27,200 @@ const record = Record<IClientOrderState>({
     ids: [],
   },
   time: 'now',
-  timeError: null,
+  locationClass: SITE_CONSTANTS.DEFAULT_BOOKING_LOCATION_CLASS,
+  phone: null,
+  phoneEdited: false,
+  customerPrice: null,
   selectedOrder: null,
   status: EStatuses.Default,
   message: '',
-})
+}
 
-export default function(state = new record(), action: TAction) {
+
+// const record = Record<IClientOrderState>({
+//   ...defaultRecord,
+//   from: getItem('state.clientOrder.from', defaultRecord.from),
+//   to: getItem('state.clientOrder.to', defaultRecord.to),
+//   time: getItem('state.clientOrder.time', defaultRecord.time),
+//   phone: getItem('state.clientOrder.phone', defaultRecord.phone),
+//   customerPrice:
+//     getItem('state.clientOrder.customerPrice', defaultRecord.customerPrice),
+// })
+
+
+const record = Record<IClientOrderState>({
+  ...defaultRecord,
+  // Удаляем вызовы getItem, которые возвращают Promise:
+  // from: getItem('state.clientOrder.from', defaultRecord.from), // Ошибка здесь
+  // to: getItem('state.clientOrder.to', defaultRecord.to), // Ошибка здесь
+  // time: getItem('state.clientOrder.time', defaultRecord.time), // Ошибка здесь
+  // phone: getItem('state.clientOrder.phone', defaultRecord.phone), // Ошибка здесь
+  // customerPrice:
+  //   getItem('state.clientOrder.customerPrice', defaultRecord.customerPrice), // Ошибка здесь
+  
+  // Правильно: используем только дефолтные значения:
+  from: defaultRecord.from,
+  to: defaultRecord.to,
+  time: defaultRecord.time,
+  phone: defaultRecord.phone,
+  customerPrice: defaultRecord.customerPrice,
+});
+
+
+
+export default function reducer(
+  state = new record(),
+  action: TAction,
+  performedActions = new Set<string>(),
+) {
   const { type, payload } = action
+  if (performedActions.has(type))
+    return state
+  performedActions.add(type)
+
+  if (type === configConstants.ActionTypes.SET_CONFIG_SUCCESS) {
+    defaultRecord.carClass = SITE_CONSTANTS.DEFAULT_CAR_CLASS
+    defaultRecord.locationClass = SITE_CONSTANTS.DEFAULT_BOOKING_LOCATION_CLASS
+    state = reducer(state, {
+      type: ActionTypes.SET_CAR_CLASS,
+      payload: state.carClass,
+    }, performedActions)
+    state = reducer(state, {
+      type: ActionTypes.SET_SEATS,
+      payload: state.seats,
+    }, performedActions)
+    state = reducer(state, {
+      type: ActionTypes.SET_COMMENTS,
+      payload: state.comments,
+    }, performedActions)
+    state = reducer(state, {
+      type: ActionTypes.SET_LOCATION_CLASS,
+      payload: state.locationClass,
+    }, performedActions)
+    return state
+  }
+
+  if (type === ActionTypes.SET_CAR_CLASS) {
+    const available = availableCarClassesIds(state)
+    const carClass = available.has(payload) ?
+      payload :
+      firstItem(available) ?? defaultRecord.carClass
+
+    const carClassData = SITE_CONSTANTS.CAR_CLASSES[carClass] ?? { seats: 1, booking_location_classes: null };
+
+    const seatsLimit = carClassData?.seats ?? Infinity;
+
+    state = state
+      .set('carClass', carClass)
+    state = reducer(state, {
+      type: ActionTypes.SET_SEATS,
+      payload: Math.min(state.seats, carClassData.seats),
+    }, performedActions)
+    state = reducer(state, {
+      type: ActionTypes.SET_LOCATION_CLASS,
+      payload:
+        carClassData.booking_location_classes === null ||
+        carClassData.booking_location_classes.includes(state.locationClass) ?
+          state.locationClass :
+          [...availableLocationClassesIds(state)]?.find(id =>
+            carClassData.booking_location_classes!.includes(id as any),
+          ) ?? defaultRecord.locationClass,
+    }, performedActions)
+    return state
+  }
+
+  if (type === ActionTypes.SET_SEATS) {
+    const seats = Math.min(payload, maxAvailableSeats(state))
+    state = state
+      .set('seats', seats)
+    state = reducer(state, {
+      type: ActionTypes.SET_CAR_CLASS,
+      payload: SITE_CONSTANTS.CAR_CLASSES[state.carClass].seats < seats ?
+        availableCarClasses(state)?.find(cc => cc.seats >= seats)?.id ??
+          defaultRecord.carClass :
+        state.carClass,
+    }, performedActions)
+    return state
+  }
+
+  if (type === ActionTypes.SET_COMMENTS) {
+    return state
+      .set('comments', {
+        ...payload,
+        ids: payload.ids
+          .filter((id: string) => id in SITE_CONSTANTS.BOOKING_COMMENTS),
+      })
+  }
+
+  if (type === ActionTypes.SET_LOCATION_CLASS) {
+    const available = availableLocationClassesIds(state)
+    const locationClass = available.has(payload) ?
+      payload :
+      firstItem(available) ?? defaultRecord.locationClass
+    const carClassData = SITE_CONSTANTS.CAR_CLASSES[state.carClass]
+    state = state
+      .set('locationClass', locationClass)
+    state = reducer(state, {
+      type: ActionTypes.SET_CAR_CLASS,
+      payload:
+        carClassData.booking_location_classes === null ||
+        carClassData.booking_location_classes.includes(locationClass) ?
+          state.carClass :
+          availableCarClasses(state)?.find(cc =>
+            cc.booking_location_classes === null ||
+            cc.booking_location_classes.includes(locationClass),
+          )?.id ?? defaultRecord.carClass,
+    }, performedActions)
+    return state
+  }
+
+  if (
+    type === ActionTypes.SET_FROM_POLYGONS ||
+    type === ActionTypes.SET_TO_POLYGONS
+  ) {
+    state = state
+      .set(
+        type === ActionTypes.SET_FROM_POLYGONS ? 'fromPolygons' : 'toPolygons',
+        payload,
+      )
+    state = reducer(state, {
+      type: ActionTypes.SET_LOCATION_CLASS,
+      payload: state.locationClass,
+    }, performedActions)
+    return state
+  }
 
   switch (type) {
-    case ActionTypes.SET_SEATS:
+    case ActionTypes.SET_FROM_REQUEST:
       return state
-        .set('seats', payload)
-    case ActionTypes.SET_COMMENTS:
-      return state
-        .set('comments', payload)
-    case ActionTypes.SET_TIME:
-      return state
-        .set('time', payload)
-    case ActionTypes.SET_TIME_ERROR:
-      return state
-        .set('timeError', payload)
+        .set('fromPolygons', defaultRecord.fromPolygons)
+        .set('fromLoading', true)
     case ActionTypes.SET_FROM:
       return state
         .set('from', payload)
+    case ActionTypes.SET_FROM_SUCCESS:
+      return state
+        .set('fromLoading', false)
+    case ActionTypes.SET_TO_REQUEST:
+      return state
+        .set('toPolygons', defaultRecord.toPolygons)
+        .set('toLoading', true)
     case ActionTypes.SET_TO:
       return state
         .set('to', payload)
+    case ActionTypes.SET_TO_SUCCESS:
+      return state
+        .set('toLoading', false)
+    case ActionTypes.SET_TIME:
+      return state
+        .set('time', payload)
+    case ActionTypes.SET_PHONE:
+      return state
+        .set('phone', payload)
+        .set('phoneEdited', state.phoneEdited || payload !== state.phone)
+    case ActionTypes.SET_CUSTOMER_PRICE:
+      return state
+        .set('customerPrice', payload)
     case ActionTypes.SET_SELECTED_ORDER:
       return state
         .set('selectedOrder', payload)
@@ -53,17 +232,39 @@ export default function(state = new record(), action: TAction) {
         .set('message', payload)
     case ActionTypes.RESET:
       return state
-        .set('seats', 1)
-        .set('to', null)
-        .set('comments', {
-          custom: '',
-          flightNumber: '',
-          placard: '',
-          ids: [],
-        })
-        .set('time', 'now')
-        .set('timeError', null)
+        .set('carClass', defaultRecord.carClass)
+        .set('seats', defaultRecord.seats)
+        .set('to', defaultRecord.to)
+        .set('toPolygons', defaultRecord.toPolygons)
+        .set('comments', defaultRecord.comments)
+        .set('time', defaultRecord.time)
+        .set('customerPrice', defaultRecord.customerPrice)
     default:
       return state
   }
 }
+
+const fromPolygons = (state: IClientOrderState) => state.fromPolygons
+const toPolygons = (state: IClientOrderState) => state.toPolygons
+const availableLocationClassesIds = createSelector(
+  [fromPolygons, toPolygons],
+  (fromPolygons, toPolygons) => new Set((
+    fromPolygons && toPolygons ?
+      polygonsLocationClasses(fromPolygons, toPolygons) :
+      SITE_CONSTANTS.BOOKING_LOCATION_CLASSES
+  ).map(({ id }: any) => id)),
+)
+const availableCarClasses = createSelector(
+  availableLocationClassesIds,
+  ids => util.availableCarClasses(
+    SITE_CONSTANTS.BOOKING_LOCATION_CLASSES.filter(({ id }: any) => ids.has(id)),
+  ),
+)
+const availableCarClassesIds = createSelector(
+  availableCarClasses,
+  carClasses => new Set(carClasses.map(({ id }) => id)),
+)
+const maxAvailableSeats = createSelector(
+  availableCarClasses,
+  carClasses => util.maxAvailableSeats(carClasses),
+)

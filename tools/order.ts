@@ -1,0 +1,144 @@
+import moment from 'moment'
+import { calculateFinalPrice } from '../components/modals/RatingModal'
+import { DEFAULT_CITY_ID, PROFIT_RANKS } from '../constants/orders'
+import SITE_CONSTANTS from '../siteConstants'
+import {
+  EBookingStates,
+  EOrderProfitRank,
+  ICar,
+  IOrder,
+  IOrderEstimation,
+} from '../types/types'
+import { IWayGraph, IWayGraphNode } from './maps'
+
+export function updateCompletedOrderDuration(order: IOrder): IOrder {
+  if (
+    order.b_state === EBookingStates.Completed &&
+    order.b_options?.pricingModel
+  ) {
+    order = {
+      ...order,
+      b_options: {
+        ...order.b_options,
+        pricingModel: {
+          ...order.b_options.pricingModel,
+          options: {
+            ...(order.b_options.pricingModel.options || {}),
+            duration: moment(order.b_completed)
+              .diff(order.b_start_datetime, 'minutes'),
+          },
+        },
+      },
+    }
+    const newPrice = calculateFinalPrice(order)
+    if (typeof newPrice === 'number')
+      order.b_options!.pricingModel!.price = newPrice
+  }
+  return order
+}
+
+export function estimateOrder(
+  order: IOrder,
+  car: ICar,
+  startingPoint: [lat: number, lng: number],
+  graph: IWayGraph,
+): IOrderEstimation {
+  const profit = estimateProfit(order, car, startingPoint, graph)
+  const profitRank = profit && rankProfit(profit)
+  return { profit, profitRank }
+}
+
+interface ITimeModification {
+  start: moment.Moment
+  end: moment.Moment
+  [key: string]: any
+}
+
+
+export function estimateProfit(
+  order: IOrder,
+  car: ICar,
+  startingPoint: [lat: number, lng: number],
+  graph: IWayGraph,
+): number | undefined {
+  let factors = SITE_CONSTANTS.CALCULATION_BENEFITS
+    [DEFAULT_CITY_ID]?.[car.cc_id]
+  if (!factors)
+    return
+  const distance = calculateDistance(order, startingPoint, graph)
+  if (!distance)
+    return
+
+  // const orderTime = moment(0)
+  // for (const part of ['hours', 'minutes', 'seconds'] as const)
+  //   orderTime.set(part, order.b_start_datetime.get(part))
+
+  const orderTime = moment(0)
+  .hour(order.b_start_datetime.hour())
+  .minute(order.b_start_datetime.minute())
+  .second(order.b_start_datetime.second())
+
+  const factorsModification = factors.time_modifications?.find((mod: ITimeModification) =>
+    mod.start < mod.end
+      ? mod.start < orderTime && orderTime < mod.end
+      : mod.end < orderTime && orderTime < mod.start
+  )
+  
+  if (factorsModification)
+    factors = { ...factors, ...factorsModification }
+
+  const [startingPointToOrder, startToDestination] = distance
+    .map(distance => distance / 1000)
+  const { fuel_cost, rate, base_fare, min_fare } = factors
+  const income = Math.max(base_fare + rate * startToDestination, min_fare)
+  const cost = fuel_cost * (startingPointToOrder + startToDestination)
+  return income - cost
+}
+
+export function rankProfit(profit: number): EOrderProfitRank {
+  const ranks = [...PROFIT_RANKS].sort(([, a], [, b]) => a - b)
+  let rank = EOrderProfitRank.Low
+  for (const [minProfitRank, minProfit] of ranks)
+    if (profit >= minProfit)
+      rank = minProfitRank
+  return rank
+}
+
+export function calculateDistance(
+  order: IOrder,
+  startingPoint: [lat: number, lng: number],
+  graph: IWayGraph,
+): [startingPointToOrder: number, startToDestination: number] | undefined {
+  if (!(
+    order.b_start_latitude && order.b_start_longitude &&
+    order.b_destination_latitude && order.b_destination_longitude
+  ))
+    return
+
+  const nodes: IWayGraphNode[] = []
+  for (const [lat, lng] of [
+    startingPoint,
+    [order.b_start_latitude, order.b_start_longitude],
+    [order.b_destination_latitude, order.b_destination_longitude],
+  ]) {
+    const [node] = graph.findClosestNode(lat, lng)
+    if (!node)
+      return
+    nodes.push(node)
+  }
+  const [startNode, orderStartNode, destinationNode] = nodes
+
+  const distances: number[] = []
+  for (const [start, destination] of [
+    [startNode, orderStartNode],
+    [orderStartNode, destinationNode],
+  ]) {
+    const [, distance] = graph.findShortestPath(start.id, destination.id)
+    if (distance === Infinity)
+      return
+    distances.push(distance)
+  }
+  const [startingPointToOrder, startToDestination] = distances
+
+  return [startingPointToOrder, startToDestination]
+}

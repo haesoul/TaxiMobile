@@ -1,13 +1,92 @@
-import * as fuzzysort from 'fuzzysort'
-import _ from 'lodash'
-import moment, { Moment } from 'moment'
-import { useSelector } from 'react-redux'
-import images from '../constants/images'
-import { t, TRANSLATION } from '../localization'
-import SITE_CONSTANTS /**, { MAP_MODE } */ from '../siteConstants'
-import type { IRootState } from '../state/index'
-import { ISelectOption } from '../types'
-import { ECarClasses, EStatuses, IAddressPoint, ICar, IDriver, IOrder, ITrip, IUser, TAvailableModes, TBlockObject, TMoneyModes } from '../types/types'
+// import '@formatjs/intl-numberformat/locale-data/en';
+// import '@formatjs/intl-numberformat/locale-data/ru';
+// import '@formatjs/intl-numberformat/polyfill';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { readAsStringAsync } from 'expo-file-system/legacy';
+import * as Location from 'expo-location';
+import * as fuzzysort from 'fuzzysort';
+import _ from 'lodash';
+import moment, { Moment } from 'moment';
+import images from '../constants/images';
+import { t, TRANSLATION } from '../localization';
+import SITE_CONSTANTS, { CURRENCY } from '../siteConstants';
+import { ISelectOption } from '../types';
+import {
+  EStatuses,
+  IAddressPoint,
+  IOrder,
+  IUser,
+  TBlockObject,
+} from '../types/types';
+
+if (!global.Intl || typeof Intl.NumberFormat === 'undefined') {
+  require('@formatjs/intl-numberformat/polyfill')
+  require('@formatjs/intl-numberformat/locale-data/en');
+  require('@formatjs/intl-numberformat/locale-data/ru');
+}
+
+
+
+
+export function makeFlat(
+  obj: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'object' && value && !(value instanceof Array)) {
+      const nestedObj = makeFlat(value as Record<string, unknown>)
+      for (const [nestedKey, nestedValue] of Object.entries(nestedObj))
+        result[`${key}.${nestedKey}`] = nestedValue
+    } else if (!(key in result))
+      result[key] = value
+  }
+  return result
+}
+
+export function makeNested(
+  obj: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const path = key.split('.')
+    let nestedObj = result
+    for (const [index, nestedKey] of path.entries()) {
+      if (index === path.length - 1)
+        nestedObj[nestedKey] = value
+      else if (
+        !nestedObj[nestedKey] ||
+        typeof nestedObj[nestedKey] !== 'object'
+      ) nestedObj[nestedKey] = {}
+      nestedObj = nestedObj[nestedKey] as Record<string, unknown>
+    }
+  }
+  return result
+}
+
+export function deepGet(obj: unknown, path: string): unknown {
+  return path.split('.').reduce((res, key) => (res as any)?.[key], obj)
+}
+
+// export function cloneFormData(formData: FormData) {
+//   const result = new FormData()
+//   for (const [key, value] of formData)
+//     result.append(key, value)
+//   return result
+// }
+
+export function cloneFormData(formData: FormData) {
+  const result = new FormData()
+
+  const parts = (formData as any)?._parts
+  if (!Array.isArray(parts)) return result
+
+  for (const [key, value] of parts) {
+    result.append(key, value)
+  }
+
+  return result
+}
+
 const hints = [
   'Roman Ridge',
   'Kanda',
@@ -186,14 +265,18 @@ const hints = [
 
 // eslint-disable-next-line
 export const phoneRegex = /^[\+]?[0-9]{1,3}[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{3,6}$/im
+export const minPhoneLength = 10
+export const maxPhoneLength = 15
 // eslint-disable-next-line
 export const emailRegex = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i
 
 const DISTANCE_COEFFICIENT = 1.5
 
 export const dateFormat = 'YYYY-MM-DD HH:mm:ssZ'
-export const dateShowFormat = 'YYYY-MM-DD HH:mm'
-export const dateFormatDate = 'YYYY-MM-DD'
+// export const dateShowFormat = 'YYYY-MM-DD HH:mm'
+export const dateShowFormat = 'HH:mm DD-MM'
+export const dateFormatDate = 'DD-MM'
+// export const dateFormatDate = 'YYYY-MM-DD'
 export const dateFormatTime = 'HH:mm:ss'
 export const dateFormatTimeShort = 'HH:mm'
 
@@ -208,74 +291,75 @@ export const cachedOrderDataValuesKey = 'cachedOrderDataValues'
 /**
  * You need to pass order || ((points || distance) && startDatetime && carClass)
  */
-export const getPayment = (
+export function getPayment(
   order?: IOrder | null,
   points?: [IAddressPoint, IAddressPoint] | null,
   distance?: number,
   startDatetime?: IOrder['b_start_datetime'],
-  carClass?: ECarClasses,
-) => {
-  if (order?.b_options?.customer_price && SITE_CONSTANTS.ENABLE_CUSTOMER_PRICE) {
-    return { value: order.b_options.customer_price, text: '', type: EPaymentType.Customer }
-  }
-
-  const _distance = distance || calcOrderDistance(points, order)
-  if (!_distance) return { value: 0, text: '0', type: EPaymentType.Calculated }
+  carClass?: string,
+): {
+  value: number | string,
+  text: string,
+  type: EPaymentType,
+} {
+  if (order?.b_options?.customer_price && SITE_CONSTANTS.ENABLE_CUSTOMER_PRICE)
+    return {
+      value: order.b_options.customer_price,
+      text: '',
+      type: EPaymentType.Customer,
+    }
+  const _distance = distance ??
+    calcOrderDistance(points, order) ??
+    order?.b_options?.pricingModel?.options?.distance
 
   let _orderTime = startDatetime,
     _startOfNightTime = moment(SITE_CONSTANTS.START_OF_NIGHT_TIME, 'h:mm'),
     _endOfNightTime = moment(SITE_CONSTANTS.END_OF_NIGHT_TIME, 'h:mm'),
     _midTime = moment('12:00', 'h:mm')
-
   if (_orderTime?.isAfter(_midTime)) {
     _endOfNightTime = _endOfNightTime.add(1, 'days')
   } else {
     _startOfNightTime = _startOfNightTime.subtract(1, 'days')
   }
-  const getNumberConfig = (
-    data: any,
-    key: string,
-    fallback: number
-  ) => {
-    const cls = data.car_classes[order?.b_car_class || carClass || ECarClasses.Any];
-    const value = Number(cls?.[key]);
-    return isNaN(value) ? fallback : value;
-  };
-  const configData = useSelector((state: IRootState) => state.config);
-  const callRate = getNumberConfig(
-    configData,
-    "courier_call_rate",
-    SITE_CONSTANTS.COURIER_CALL_RATE
-  );
-  
-  const farePer1Km = getNumberConfig(
-    configData,
-    "courier_fare_per_1_km",
-    SITE_CONSTANTS.COURIER_FARE_PER_1_KM
-  );
-  
-  
 
-  let _value = 0,
+  if (carClass === undefined)
+    carClass = order?.b_car_class
+  const carClassData = carClass ? SITE_CONSTANTS.CAR_CLASSES[carClass] : null
+  const callRate = carClassData?.courier_call_rate ??
+    SITE_CONSTANTS.COURIER_CALL_RATE
+  const farePer1Km = carClassData?.courier_fare_per_1_km ??
+    SITE_CONSTANTS.COURIER_FARE_PER_1_KM
+  let _value: string | number = callRate + farePer1Km * _distance,
     _text = ''
   if (_orderTime?.isAfter(_startOfNightTime) && _orderTime.isBefore(_endOfNightTime)) {
-    _value = SITE_CONSTANTS.EXTRA_CHARGE_FOR_NIGHT_TIME * (callRate + (farePer1Km * _distance))
-    _text =  `${SITE_CONSTANTS.EXTRA_CHARGE_FOR_NIGHT_TIME} * \
-    ( ${callRate} + ${farePer1Km} * ${_distance}${t(TRANSLATION.KM)} ) = ${_value}`
+    // _value *= SITE_CONSTANTS.EXTRA_CHARGE_FOR_NIGHT_TIME
+    _value = (Number(_value) * SITE_CONSTANTS.EXTRA_CHARGE_FOR_NIGHT_TIME);
+    _text = `${SITE_CONSTANTS.EXTRA_CHARGE_FOR_NIGHT_TIME} * \
+      ( ${callRate} + ${farePer1Km} * ${_distance}${t(TRANSLATION.KM)} ) = \
+      ${_value === 0 ? '-' : _value}`
   } else {
-    _value = callRate + (farePer1Km * _distance)
-    _text = `${callRate} + ${farePer1Km} * ${_distance}${t(TRANSLATION.KM)} = ${_value}`
+    _text = `${callRate} + ${farePer1Km} * ${_distance}${t(TRANSLATION.KM)} = \
+      ${_value === 0 ? '-' : _value}`
   }
 
   return { value: _value, text: _text, type: EPaymentType.Calculated }
 }
 
-export const calcOrderDistance = (points?: (IAddressPoint | null)[] | null, order?: IOrder | null) => {
+export function calcOrderDistance(
+  points?: (IAddressPoint | null)[] | null,
+  order?: IOrder | null,
+) {
   const [from, to] =
     points ||
     [
-      { latitude: order?.b_start_latitude, longitude: order?.b_start_longitude },
-      { latitude: order?.b_destination_latitude, longitude: order?.b_destination_longitude },
+      {
+        latitude: order?.b_start_latitude,
+        longitude: order?.b_start_longitude,
+      },
+      {
+        latitude: order?.b_destination_latitude,
+        longitude: order?.b_destination_longitude,
+      },
     ]
   if (
     from && to &&
@@ -293,283 +377,31 @@ export const calcOrderDistance = (points?: (IAddressPoint | null)[] | null, orde
   }
 }
 
-export const convertDriver = (driver: any): IDriver => {
-  return convertTypes<any, IDriver>(
-    driver,
-    {
-      toIntKeys: [
-        'c_state',
-      ],
-      toFloatKeys: [
-        'c_latitude',
-        'c_longitude',
-      ],
-      toDateKeys: [
-        'l_datetime',
-      ],
-      toBooleanKeys: [
-        'c_arrive_state',
-      ],
-    },
-  )
-}
-
-export const reverseConvertDriver = (driver: IDriver): any => {
-  return convertTypes<any, IDriver>(
-    driver,
-    {
-      toStringKeys: [
-        'c_latitude',
-        'c_longitude',
-        'c_state',
-      ],
-      toStringDateKeys: [
-        'l_datetime',
-      ],
-      toIntBooleanKeys: [
-        'c_arrive_state',
-      ],
-    },
-  )
-}
-
-export const convertOrder = (order: any): IOrder => {
-  return convertTypes<any, IOrder>(
-    order,
-    {
-      toFloatKeys: [
-        'b_start_latitude',
-        'b_start_longitude',
-        'b_destination_latitude',
-        'b_destination_longitude',
-        'b_passengers_count',
-        'b_luggage_count',
-        'b_price_estimate',
-      ],
-      toIntKeys: [
-        'b_cars_count',
-        'b_distance_estimate',
-        'b_car_class',
-        'b_state',
-      ],
-      toDateKeys: [
-        'b_start_datetime',
-        'b_created',
-        'b_approved',
-      ],
-      toBooleanKeys: [
-        'b_confirm_state',
-        'b_voting',
-      ],
-      customKeys: {
-        drivers: () => order.drivers?.map((item: any) => convertDriver(item)),
-      },
-    },
-  )
-}
-
-export const convertTrip = (trip: any): ITrip => {
-  return convertTypes<any, ITrip>(
-    trip,
-    {
-      toFloatKeys: [
-        't_start_latitude',
-        't_start_longitude',
-        't_destination_latitude',
-        't_destination_longitude',
-      ],
-      toDateKeys: [
-        't_start_datetime',
-        't_complete_datetime',
-        't_start_real_datetime',
-        't_complete_real_datetime',
-        't_edit_datetime',
-        't_create_datetime',
-      ],
-      toBooleanKeys: [
-        't_looking_for_clients',
-        't_canceled',
-      ],
-      customKeys: {
-        orders: () => trip.orders?.map((item: any) => convertOrder(item)),
-      },
-    },
-  )
-}
-
-export const reverseConvertOrder = (order: IOrder): any => {
-  return convertTypes<IOrder, any>(
-    order,
-    {
-      toStringKeys: [
-        'b_start_latitude',
-        'b_start_longitude',
-        'b_destination_latitude',
-        'b_destination_longitude',
-        'b_passengers_count',
-        'b_luggage_count',
-        'b_price_estimate',
-        'b_cars_count',
-        'b_distance_estimate',
-      ],
-      toStringDateKeys: [
-        'b_start_datetime',
-        'b_created',
-        'b_approved',
-      ],
-      toIntBooleanKeys: [
-        'b_confirm_state',
-        'b_voting',
-      ],
-      customKeys: {
-        drivers: () => order.drivers?.map(item => reverseConvertDriver(item)),
-      },
-    },
-  )
-}
-
-export const reverseConvertTrip = (order: ITrip): any => {
-  return convertTypes<ITrip, any>(
-    order,
-    {
-      toStringKeys: [
-        't_start_latitude',
-        't_start_longitude',
-        't_destination_latitude',
-        't_destination_longitude',
-      ],
-      toStringDateKeys: [
-        't_start_datetime',
-        't_complete_datetime',
-      ],
-    },
-  )
-}
-
-export const convertCar = (car: any): ICar => {
-  return convertTypes<any, ICar>(
-    car,
-    {
-      toIntKeys: [
-        'seats',
-      ],
-    },
-  )
-}
-
-export const convertUser = (user: any): IUser => {
-  return convertTypes<any, IUser>(
-    user, 
-    {
-      customKeys: {
-        u_ban: () => convertTypes<any, IUser['u_ban']>(user.u_ban, {
-          toIntKeys: ['auth', 'order', 'blog_topic', 'blog_post'],
-        }),
-        u_details: () => convertTypes<any, IUser['u_details']>(user.u_details, {
-          toJSONKeys: ['passport_photo', 'driver_license_photo', 'license_photo'],
-        }),
-      },
-      toIntKeys: ['u_tips', 'u_role'],
-      toFloatKeys: ['out_latitude', 'out_longitude', 'out_s_latitude', 'out_s_longitude'],
-      toBooleanKeys: ['u_active', 'u_phone_checked', 'out_drive'],
-      toDateKeys: ['u_birthday', 'out_est_datetime'],
-    },
-  )
-}
-
-export const reverseConvertUser = (user: any): IUser => {
-  return convertTypes<IUser, any>(
-    user,
-    {
-      toDetailsObjectKeys: ['u_details'],
-    },
-  )
-}
-
-interface TConvertKeys {
-  toFloatKeys?: string[],
-  toIntKeys?: string[],
-  toStringKeys?: string[],
-  toStringObjectKeys?: string[]
-  toDetailsObjectKeys?: string[]
-  toDateKeys?: string[],
-  toStringDateKeys?: string[],
-  toBooleanKeys?: string[],
-  toIntBooleanKeys?: string[],
-  toJSONKeys?: string[],
-  customKeys?: {[key: string]: Function}
-}
-const convertTypes = <T, R>(
-  object: T,
-  {
-    toFloatKeys = [],
-    toIntKeys = [],
-    toStringKeys = [],
-    toStringObjectKeys = [],
-    toDetailsObjectKeys = [],
-    toDateKeys = [],
-    toStringDateKeys = [],
-    toBooleanKeys = [],
-    toIntBooleanKeys = [],
-    toJSONKeys = [],
-    customKeys = {},
-  }: TConvertKeys,
-) => {
-  const convertedObject: any = {}
-
-  for (let [key, value] of Object.entries(object as any)) {
-    if (value === null) continue
-
-    if (toFloatKeys.includes(key)) convertedObject[key] = parseFloat(String(value))
-    else if (toIntKeys.includes(key)) convertedObject[key] = parseInt(String(value))
-    else if (toStringKeys.includes(key)) convertedObject[key] = String(value)
-    else if (toStringObjectKeys.includes(key)) convertedObject[key] = JSON.stringify(value)
-    else if (toDetailsObjectKeys.includes(key)) {
-      const detailsArr = []
-      for (let [itemKey, itemValue] of Object.entries(String(value))) {
-        detailsArr.push(['=', [itemKey], itemValue ?? ''])
-      }
-      convertedObject[key] = detailsArr
-    }
-    else if (toDateKeys.includes(key)) convertedObject[key] = moment(value)
-      else if (toStringDateKeys.includes(key)) {
-
-        if (value && typeof (value as any).format === 'function') {
-
-            convertedObject[key] = (value as any).format(dateFormat)
-        } else {
-
-            convertedObject[key] = String(value);
-        }
-    }
-    else if (toBooleanKeys.includes(key)) convertedObject[key] = Boolean(parseInt(String(value)))
-    else if (toIntBooleanKeys.includes(key)) convertedObject[key] = Number(value)
-    else if (toJSONKeys.includes(key)) {
-      if (typeof value !== 'string') {
-        convertedObject[key] = value
-      } else {
-        try {
-          convertedObject[key] = JSON.parse(value)
-        } catch (e) {
-          convertedObject[key] = value
-        }
-      }
-    }
-    else if (customKeys.hasOwnProperty(key)) convertedObject[key] = customKeys[key]()
-    else convertedObject[key] = value
-  }
-
-  return convertedObject as R
-}
-
 export const getEmptyPhoneValue = () => {
-  return SITE_CONSTANTS.DEFAULT_PHONE_MASK.replaceAll('9', '_')
+  return SITE_CONSTANTS.DEFAULT_PHONE_MASK
 }
 
-export const getPhoneError = (phone?: string | null, required = true) => {
-  if (!phone) return null
-  if (phone === getEmptyPhoneValue() || phone === '') return required ? t(TRANSLATION.REQUIRED_FIELD) : null
-  if (!phone.match(phoneRegex)) return t(TRANSLATION.PHONE_PATTERN_ERROR)
+export function getPhoneError(phone?: string | null, required = true) {
+  if (!phone)
+    return null
+  if (phone === getEmptyPhoneValue() || phone === '')
+    return required ? t(TRANSLATION.REQUIRED_FIELD) : null
+  if (!phone.match(phoneRegex))
+    return t(TRANSLATION.PHONE_PATTERN_ERROR)
+  return null
+}
+
+export function getPhoneNumberError(
+  phone: number | null,
+  required = true,
+): string | null {
+  if (
+    phone === null ||
+    phone < 10 ** (getEmptyPhoneValue().match(/\d/g)?.length ?? 0)
+  )
+    return required ? t(TRANSLATION.REQUIRED_FIELD) : null
+  if (phone < 10 ** (minPhoneLength - 1) || phone >= 10 ** maxPhoneLength)
+    return t(TRANSLATION.PHONE_PATTERN_ERROR)
   return null
 }
 
@@ -714,28 +546,40 @@ export const formatComment = (
   return `${custom ? `${custom}, ` : ''}${userID ? `${t(TRANSLATION.CLIENT, { toLower: true })} - ${userID}` : ''}`
 }
 
-// export const getHints = (text?: string) => {
-//   if (!text) return []
-//   // const words = [...text.matchAll(/[,\s]*([\w-]+)/g)]
-//   // const last = words[words.length - 1][1]
-//   const parts = text.split(',')
-//   const last = parts[parts.length - 1]
-//   return findBestMatch(last, hints)
-//     .ratings
-//     .sort((a, b) => b.rating - a.rating)
-//     .slice(0, 3)
-//     .filter(item => item.rating !== 0)
-//     .map(item => text.replace(last.trim(), item.target))
-// }
+const EMOJI: Record<string, string> = {
+  1: images.emoji_1,
+  2: images.emoji_2,
+  3: images.emoji_3,
+  4: images.emoji_4,
+  5: images.emoji_5,
+  6: images.emoji_6,
+  7: images.emoji_7,
+  '7.1': images.emoji_7_1,
+  8: images.emoji_8,
+}
 
+export const formatCommentWithEmoji = (
+  ids: IOrder['b_comments'],
+) => {
+  return ids
+    ?.filter(item => parseInt(item) < 99)
+    .map(item => ({
+      src: EMOJI[item],
+      hint: t(TRANSLATION.BOOKING_COMMENTS[item]),
+    }))
+}
 
 
 export const getHints = (text?: string) => {
   if (!text) return [];
 
   const parts = text.split(',');
+
   const lastInput = parts[parts.length - 1].trim();
 
+  if (lastInput.length === 0) return [];
+  
+  const baseText = text.substring(0, text.length - lastInput.length)
   const results = fuzzysort.go(lastInput, hints, {
       limit: 3,
   });
@@ -743,10 +587,10 @@ export const getHints = (text?: string) => {
   return results
       .map(result => result.target)
       .map(hint => {
-          const baseText = text.substring(0, text.length - lastInput.length);
           return baseText + hint;
       });
 }
+
 export const shortenAddress = (address: string, splitter?: string) => {
   if (!splitter) {
     return address
@@ -754,103 +598,76 @@ export const shortenAddress = (address: string, splitter?: string) => {
   return address.slice(0, address.indexOf(splitter) + splitter.length)
 }
 
+// export const getStatusClassName = (status: EStatuses) => {
+//   switch(status) {
+//     case EStatuses.Fail: return 'fail'
+//     case EStatuses.Success: return 'success'
+//     case EStatuses.Loading: return 'loading'
+//     case EStatuses.Warning: return 'warning'
+//     default: return 'default'
+//   }
+// }
+
 export const getStatusClassName = (status: EStatuses) => {
-  switch(status) {
+  switch (status) {
     case EStatuses.Fail: return 'fail'
     case EStatuses.Success: return 'success'
     case EStatuses.Loading: return 'loading'
-    case EStatuses.Warning: return 'warning'
-    default: return 'default'
+    case EStatuses.Warning: return 'warn'
+    default: return 'black'
   }
 }
 
-// TODO add api keys
-export const getTileServerUrl = () => {
-  // switch (SITE_CONSTANTS.MAP_MODE) {
-  //   case MAP_MODE.GOOGLE:
-  //     return 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
-  //   case MAP_MODE.OSM:
-  //     return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-  //   case MAP_MODE.YANDEX:
-  //     return 'https://vec03.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}'
-  //   default:
-  //     return ''
-  // }
-  return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-}
+// export const getTileServerUrl = () => {
+//   return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+// }
+// components/Map.tsx
+
+
+
 
 export const getAttribution = () => {
-  // switch (SITE_CONSTANTS.MAP_MODE) {
-  //   case MAP_MODE.OSM:
-  //     return 'Map data &copy; <a href="https://www.openstreetmap.org/">
-  //OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>,
-  //Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
-  //   case MAP_MODE.YANDEX:
-  //     return '<a http="yandex.ru" target="_blank">Яндекс</a>'
-  //   default:
-  //     return ''
-  // }
   return 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>'
 }
 
-export function addHiddenOrder(orderID?: IOrder['b_id'], userID?: IUser['u_id']) {
+export async function addHiddenOrder(orderID?: IOrder['b_id'], userID?: IUser['u_id']) {
   if (!orderID || !userID) return
-  let hiddenOrders = JSON.parse(localStorage.getItem('hiddenOrders') || '{}')
+  const raw = await AsyncStorage.getItem('hiddenOrders');
+  let hiddenOrders = raw ? JSON.parse(raw) : {};
   if (hiddenOrders[userID]) {
     hiddenOrders[userID] = [...hiddenOrders[userID], orderID]
   } else {
     hiddenOrders[userID] = [orderID]
   }
-  localStorage.setItem('hiddenOrders', JSON.stringify(hiddenOrders))
+  await AsyncStorage.setItem('hiddenOrders', JSON.stringify(hiddenOrders))
 }
 
-export function parseAvailableModes(modes: string) {
-  return modes.split(';').reduce((acc: TAvailableModes, value) => {
-    let _subModes = value.split('=')
-    acc[_subModes[0]] = {}
 
-    if (_subModes[1]) {
-      acc[_subModes[0]].subs = _subModes[1].split(',')
-    }
+// export const getCurrentPosition = (
+//   options?: Parameters<Geolocation['getCurrentPosition']>[2],
+// ) =>
+//   new Promise<GeolocationPosition>((res, rej) => {
+//     navigator.geolocation.getCurrentPosition(res, rej, options)
+//   })
 
-    return acc
-  }, {})
-}
+export const getCurrentPosition = async () => {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== 'granted') {
+    throw new Error('location_permission_denied');
+  }
 
-export function parseMoneyModes(modes: string) {
-  return modes.split(';').reduce((sum: TMoneyModes, item) => {
-    const [main, submodes] = item.split('=')
-    const [key, value] = main.split('-')
-    if (value) sum[key] = Boolean(parseInt(value))
+  try {
+    const pos = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+      timeInterval: 1000,
+    });
+    return pos;
+  } catch (err) {
+    console.error('getCurrentPosition error', err);
+    throw err;
+  }
+};
 
-    if (submodes) {
-      sum[key] = {}
-      submodes.split(',').forEach(i => {
-        const [k, v] = i.split('-');
-        (sum[key] as any)[k] = Boolean(parseInt(v))
-      })
-    }
-
-    return sum
-  }, {})
-}
-
-export function parseEntries(entries: string) {
-  return entries.split(';').map(item => {
-    const [key, value] = item.split('-')
-    return { key, value }
-  })
-}
-
-export function parseLanguages(languages: any) {
-  return Object.entries(languages).map(([key, value]: [string, any]) => ({
-    ...value, id: key, logo: `/assets/images/default/flag-${value.logo}.svg`,
-  }))
-}
-
-export const getCurrentPosition = () => new Promise<GeolocationPosition>((res, rej) => {
-  navigator.geolocation.getCurrentPosition(res, rej)
-})
 
 export const getOrderIcon = (order: IOrder) => {
   if (order.b_comments?.includes('98')) return images.deliveryRed
@@ -875,7 +692,7 @@ export const mapBlockObject = (rawObject: TBlockObject) => {
   for (let key in rawObject) {
     if (tProps.includes(key) && rawObject[key]) {
       object[key] = rawObject[key]
-        .replaceAll(
+        .replace(
           /t\(([^(^)]*?)\)/g,
           (fullMatch: string, translationParameters: string) => {
             try {
@@ -890,7 +707,7 @@ export const mapBlockObject = (rawObject: TBlockObject) => {
     }
     if (iProps.includes(key) && rawObject[key]) {
       object[key] = rawObject[key]
-        .replaceAll(
+        .replace(
           /i\(([^(^)]*?)\)/g,
           (fullMatch: string, imageKey: keyof typeof images) => images[imageKey],
         )
@@ -906,9 +723,40 @@ export const mapBlockObject = (rawObject: TBlockObject) => {
   return object
 }
 
-export const getBase64 = (file: any) => new Promise((resolve, reject) => {
-  const reader = new FileReader()
-  reader.readAsDataURL(file)
-  reader.onload = () => resolve(reader.result)
-  reader.onerror = error => reject(error)
-})
+// export const getBase64 = (file: any) => new Promise((resolve, reject) => {
+//   const reader = new FileReader()
+//   reader.readAsDataURL(file)
+//   reader.onload = () => resolve(reader.result)
+//   reader.onerror = error => reject(error)
+// })
+
+export const getBase64 = async (uri: string): Promise<string> => {
+  return await readAsStringAsync(uri, { encoding: 'base64' });
+};
+
+
+
+export function formatCurrency(
+  value: number,
+  { signDisplay = 'auto', currencyDisplay = 'symbol' }: {
+    signDisplay?: 'auto' | 'always' | 'exceptZero' | 'negative' | 'never',
+    currencyDisplay?: 'code' | 'symbol' | 'narrowSymbol' | 'name' | 'none'
+  } = {},
+) {
+  const result = new Intl.NumberFormat(undefined, {
+    signDisplay,
+    style: 'currency',
+    currency: CURRENCY.NAME,
+    currencyDisplay: currencyDisplay !== 'none' ? currencyDisplay : 'code',
+  }).format(value)
+  return currencyDisplay === 'none' ?
+    result.replace(CURRENCY.NAME, '') :
+    result
+}
+
+
+
+export const getTileServerUrl = () => {
+
+  return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+}

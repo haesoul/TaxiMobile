@@ -1,50 +1,194 @@
-import { getCurrentPosition, shortenAddress } from './../../tools/utils'
-import { all, takeEvery, put } from 'redux-saga/effects'
-import { ActionTypes } from './constants'
-import { EPointType, IAddressPoint, IPlaceResponse } from '../../types/types'
-import { TAction } from '../../types'
-import { call } from '../../tools/sagaUtils'
+import { all, put, takeEvery, takeLatest } from 'redux-saga/effects'
+import { IRootState } from '..'
 import * as API from '../../API'
+import { getItem, removeItem, setItem } from '../../tools/localStorage'
+import { call, select } from '../../tools/sagaUtils'
+import {
+  getCurrentPosition,
+  getPhoneNumberError,
+  shortenAddress,
+} from '../../tools/utils'
+import { TAction } from '../../types'
+import { EPointType, IAddressPoint } from '../../types/types'
+import { configConstants } from '../config'
+import { ActionTypes, IClientOrderState } from './constants'
+import { moduleSelector } from './selectors'
 
 export const saga = function* () {
   yield all([
-    takeEvery(ActionTypes.SET_FROM_REQUEST, setPointSaga(EPointType.From)),
-    takeEvery(ActionTypes.SET_TO_REQUEST, setPointSaga(EPointType.To)),
+    takeLatest(ActionTypes.SET_FROM_REQUEST, setPointSaga),
+    takeLatest(ActionTypes.SET_TO_REQUEST, setPointSaga),
+    takeEvery(
+      configConstants.ActionTypes.SET_CONFIG_SUCCESS,
+      loadFromStorageSaga,
+    ),
+    takeEvery([
+      ActionTypes.SET_CAR_CLASS,
+      ActionTypes.SET_SEATS,
+      ActionTypes.SET_LOCATION_CLASS,
+      ActionTypes.SET_FROM_POLYGONS,
+      ActionTypes.SET_TO_POLYGONS,
+    ], dumpSelectsToStorageSaga),
+    takeEvery(ActionTypes.SET_COMMENTS, setCommentsSaga),
+    takeEvery(ActionTypes.SET_TIME, setTimeSaga),
+    takeEvery(ActionTypes.SET_PHONE, setPhoneSaga),
+    takeEvery(ActionTypes.SET_CUSTOMER_PRICE, setCustomerPriceSaga),
+    takeEvery(ActionTypes.RESET, resetSaga),
   ])
 }
 
-const setPointSaga = (type: EPointType) => function* (data: TAction) {
-  const value: IAddressPoint = { ...data.payload }
-  if (data.payload.isCurrent && navigator.geolocation) {
-    try {
-      const position = yield* call<GeolocationPosition>(getCurrentPosition)
-      value.latitude = position.coords.latitude
-      value.longitude = position.coords.longitude
-    } catch (e) {
-      console.warn('Geolocation error', e)
-    }
+function* loadFromStorageSaga() {
+  const actions: [
+    typeof ActionTypes[keyof typeof ActionTypes],
+    keyof IClientOrderState
+  ][] = [
+    [ActionTypes.SET_FROM_REQUEST, 'from'],
+    [ActionTypes.SET_TO_REQUEST, 'to'],
+    [ActionTypes.SET_CAR_CLASS, 'carClass'],
+    [ActionTypes.SET_SEATS, 'seats'],
+    [ActionTypes.SET_COMMENTS, 'comments'],
+    [ActionTypes.SET_LOCATION_CLASS, 'locationClass'],
+  ]
+  // for (const [type, payload] of actions.map(
+  //   ([type, key]): [string, unknown] =>
+  //     [type, getItem(`state.clientOrder.${key}`)],
+  // ))
+  //   if (payload !== undefined)
+  //     yield put({ type, payload })
+  for (const [type, key] of actions) {
+    const value = yield* call(getItem, `state.clientOrder.${key}`);
+    if (value !== undefined && value !== null)
+      yield put({ type, payload: value });
   }
-  try {
-    if (!(value.address || value.shortAddress) && value.latitude && value.longitude) {
-      const address = yield* call<IPlaceResponse>(
-        API.reverseGeocode,
-        value.latitude.toString(),
-        value.longitude.toString(),
-      )
-      value.address = address.display_name
-      value.shortAddress = shortenAddress(
-        address.display_name,
-        address.address.city ||
-        address.address.country ||
-        address.address.village ||
-        address.address.town ||
-        address.address.state,
-      )
+  
+}
+
+function* dumpSelectsToStorageSaga() {
+  const keys: (keyof IClientOrderState)[] = [
+    'carClass',
+    'seats',
+    'locationClass',
+  ]
+  for (const key of keys)
+    setItem(
+      `state.clientOrder.${key}`,
+      yield* select(keySelector(key)),
+    )
+}
+function* setCommentsSaga() {
+  const value = yield* select(keySelector('comments'))
+  setItem('state.clientOrder.comments', value)
+}
+function* setTimeSaga() {
+  const value = yield* select(keySelector('time'))
+  setItem('state.clientOrder.time', value)
+}
+function* setPhoneSaga() {
+  const value = yield* select(keySelector('phone'))
+  if (!getPhoneNumberError(value))
+    setItem('state.clientOrder.phone', value)
+}
+function* setCustomerPriceSaga() {
+  const value = yield* select(keySelector('customerPrice'))
+  setItem('state.clientOrder.customerPrice', value)
+}
+
+function resetSaga() {
+  const keys = [
+    'carClass',
+    'seats',
+    'to',
+    'comments',
+    'time',
+    'customerPrice',
+  ]
+  for (const key of keys)
+    removeItem(`state.clientOrder.${key}`)
+}
+
+const keySelector = <K extends keyof IClientOrderState>(key: K) =>
+  (state: IRootState) => moduleSelector(state)[key]
+
+function* setPointSaga(action: TAction) {
+  const type = action.type === ActionTypes.SET_TO_REQUEST ?
+    EPointType.To :
+    EPointType.From
+  const setAction = type === EPointType.To ?
+    ActionTypes.SET_TO :
+    ActionTypes.SET_FROM
+
+  let value: IAddressPoint = action.payload
+  yield put({ type: setAction, payload: value })
+  setItem(
+    `state.clientOrder.${type === EPointType.From ? 'from' : 'to'}`,
+    value,
+  )
+
+  if (action.payload.isCurrent && navigator.geolocation) {
+    try {
+      const position = yield* call(getCurrentPosition)
+      const { latitude, longitude } = position.coords
+      value = { ...value, latitude, longitude }
+      yield put({ type: setAction, payload: value })
+    } catch (error) {
+      console.warn('Geolocation error', error)
     }
-  } catch (error) {
-    console.error(error)
   }
 
-  yield put({ type: type === EPointType.From ? ActionTypes.SET_FROM : ActionTypes.SET_TO, payload: value })
-  localStorage.setItem(type === EPointType.From ? 'from' : 'to', JSON.stringify(value))
+  yield all([
+    call(function*() {
+      if (
+        !(value.address || value.shortAddress) &&
+        value.latitude && value.longitude
+      ) {
+        try {
+          const address = yield* call(
+            API.reverseGeocode,
+            value.latitude.toString(),
+            value.longitude.toString(),
+          )
+          value = {
+            ...value,
+            address: address.display_name,
+            shortAddress: shortenAddress(
+              address.display_name,
+              address.address.city ||
+              address.address.country ||
+              address.address.village ||
+              address.address.town ||
+              address.address.state,
+            ),
+          }
+          yield put({ type: setAction, payload: value })
+        } catch (error) {
+          console.error(error)
+        }
+      }
+    }),
+
+    call(function*() {
+      if (value.latitude && value.longitude) {
+        try {
+          const polygons = yield* call(API.getPolygonsIdsOnPoint, [
+            value.latitude,
+            value.longitude,
+          ])
+          yield put({
+            type: type === EPointType.To ?
+              ActionTypes.SET_TO_POLYGONS :
+              ActionTypes.SET_FROM_POLYGONS,
+            payload: polygons,
+          })
+        } catch (error) {
+          console.error(error)
+        }
+      }
+    }),
+  ])
+
+  yield put({
+    type: type === EPointType.To ?
+      ActionTypes.SET_TO_SUCCESS :
+      ActionTypes.SET_FROM_SUCCESS,
+  })
 }

@@ -11,6 +11,7 @@ export const record = Record<IUserState>({
   message: '',
   tab: LOGIN_TABS_IDS[0],
   response: null,
+  whatsappSignUpData: { u_phone: '' },
 })
 
 export default function reducer(state = new record(), action: TAction) {
@@ -29,9 +30,10 @@ export default function reducer(state = new record(), action: TAction) {
         .set('user', payload.user)
         .set('tokens', payload.tokens)
     case ActionTypes.LOGIN_FAIL:
+      console.log('LOGIN_FAIL', payload)
       return state
         .set('status', EStatuses.Fail)
-        .set('message', TRANSLATION.LOGIN_FAIL)
+        .set('message', payload)
     case ActionTypes.LOGIN_WHATSAPP:
       return state
         .set('status', EStatuses.Whatsapp)
@@ -111,6 +113,24 @@ export default function reducer(state = new record(), action: TAction) {
       return state
         .set('user', payload)
         .set('tab', payload ? LOGIN_TABS_IDS[0] : LOGIN_TABS_IDS[1])
+
+    case ActionTypes.WHATSAPP_SIGNUP_START:
+      return state
+        .set('status', EStatuses.Loading)
+        .set('message', '')
+        .set('whatsappSignUpData', { u_phone: payload })
+    case ActionTypes.WHATSAPP_SIGNUP_SUCCESS:
+      return state
+        .set('status', EStatuses.Success)
+        .set('message', TRANSLATION.REGISTER_SUCCESS)
+        .set('response', payload)
+        .set('whatsappSignUpData', null)
+    case ActionTypes.WHATSAPP_SIGNUP_FAIL:
+      return state
+        .set('status', EStatuses.Fail)
+        .set('whatsappSignUpData', null)
+        //  .set('message', payload && payload.message || TRANSLATION.REGISTER_FAIL)?
+
     default:
       return state
 

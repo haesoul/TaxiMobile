@@ -1,26 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams } from 'expo-router';
-import _ from 'lodash';
-import React, { useEffect, useRef, useState } from 'react';
-import { DeepPartial, FieldValues, Path, PathValue, useWatch, UseWatchProps } from 'react-hook-form';
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useDispatch as useReduxDispatch,
+  useSelector as useReduxSelector,
+} from 'react-redux'
 
-const cacheValue = async (value: any, parentObjectKey: string, valueKey: string, callback: Function) => {
-  try {
-    if (parentObjectKey) {
-      // const localStorageObject = localStorage.getItem(parentObjectKey)
-      const localStorageObject = await AsyncStorage.getItem(parentObjectKey)
-      const object = localStorageObject ? JSON.parse(localStorageObject) : {}
-      await AsyncStorage.setItem(parentObjectKey, JSON.stringify({ ...object, [valueKey]: value }))
-    } else {
-      await AsyncStorage.setItem(valueKey, JSON.stringify(value))
-    }
-  } catch (error) {
-    console.error(`Error occured at cacheValue(${value}, ${parentObjectKey}, ${valueKey})`, error)
+import { useLocalSearchParams } from 'expo-router'
+import _ from 'lodash'
+import {
+  Control,
+  DeepPartialSkipArrayKey,
+  FieldValues,
+  useWatch,
+} from 'react-hook-form'
+import { IDispatch, IRootState } from '../state'
+import { getItem, setItem } from './localStorage'
 
-  }
-
-  callback(value)
-}
 
 interface IAdditionalDataFlags {
   dirty?: boolean,
@@ -38,71 +32,89 @@ interface IAdditionalData {
  * @param additionalData object containing data about additional field data passed to return. Do not change at runtime!
  *  If allowableValues does not includes cached value, defaultValue is used
  */
+// export const useCachedState = <T>(
+//   key: string,
+//   defaultValue?: T,
+//   allowableValues?: T[],
+//   additionalData: IAdditionalDataFlags = {},
+// ): [T, React.Dispatch<React.SetStateAction<T>>, IAdditionalData] => {
+//   const [value, setValue] =
+//     useState<T>(() => getItem(key, defaultValue, allowableValues))
+
+//   let dirty: boolean = false
+//   let setDirty: React.Dispatch<React.SetStateAction<boolean>>
+//   // eslint-disable-next-line react-hooks/rules-of-hooks
+//   if (additionalData.dirty) [dirty, setDirty] = useState<boolean>(false)
+
+//   let previousValue: T | undefined = undefined
+//   // eslint-disable-next-line react-hooks/rules-of-hooks
+//   if (additionalData.previousValue || additionalData.dirty) previousValue = usePrevious<T>(value)
+
+//   useEffect(() => {
+//     if (additionalData.dirty && !dirty && previousValue !== undefined && !_.isEqual(value, previousValue)) {
+//       setDirty(true)
+//     }
+//   }, [value])
+
+//   return [
+//     value,
+//     v => {
+//       if (typeof v === 'function')
+//         v = (v as (v: T) => T)(value)
+//       setValue(v)
+//       setItem(key, v)
+//     },
+//     {
+//       dirty,
+//       previousValue,
+//     },
+//   ]
+// }
 export const useCachedState = <T>(
   key: string,
   defaultValue?: T,
   allowableValues?: T[],
   additionalData: IAdditionalDataFlags = {},
 ): [T, React.Dispatch<React.SetStateAction<T>>, IAdditionalData] => {
-  
-  const _defaultValue = (defaultValue || (allowableValues && allowableValues[0])) as T
 
-  const [dirty, setDirty] = useState<boolean>(false)
-  const [value, setValue] = useState(_defaultValue)
-  const previousValue = usePrevious<T>(value)
-  const splittedKey = key.split('.')
-  let valueKey: string, parentObjectKey: string
+  const [value, setValue] = useState<T>(defaultValue as T);
 
-  
+  useEffect(() => {
+    (async () => {
+      const stored = await getItem<T>(key, defaultValue, allowableValues);
+      setValue(stored);
+    })();
+  }, [key]);
 
-  if (splittedKey.length === 1) valueKey = splittedKey[0]
-  else {
-    parentObjectKey = splittedKey[0]
-    valueKey = splittedKey[1]
+  let dirty = false;
+  let setDirty: React.Dispatch<React.SetStateAction<boolean>>;
+  if (additionalData.dirty) [dirty, setDirty] = useState(false);
+
+  let previousValue: T | undefined = undefined;
+  if (additionalData.previousValue || additionalData.dirty) {
+    previousValue = usePrevious<T>(value);
   }
 
-
-
   useEffect(() => {
-    const loadValue = async () => {
-      let value
-      try {
-        if (parentObjectKey) {
-          const item = await AsyncStorage.getItem(parentObjectKey)
-          const obj = item ? JSON.parse(item) : {}
-          value = obj[valueKey] ?? _defaultValue
-        } else {
-          const item = await AsyncStorage.getItem(valueKey)
-          value = item ? JSON.parse(item) : _defaultValue
-        }
-      } catch {
-        value = _defaultValue
-      }
-      setValue(value)
+    if (additionalData.dirty && !dirty && previousValue !== undefined && !_.isEqual(value, previousValue)) {
+      setDirty(true);
     }
-    loadValue()
-  }, [])
-  
-
-  useEffect(() => {
-    if (additionalData.dirty && !dirty && previousValue !== null && !_.isEqual(value, previousValue)) {
-      setDirty(true)
-    }
-  }, [value, dirty, previousValue, additionalData.dirty, setDirty])
+  }, [value]);
 
   return [
     value,
-    (v) => cacheValue(typeof v === 'function' ? (v as Function)(value) : v, parentObjectKey, valueKey, setValue),
-    {
-      dirty,
-      previousValue,
+    v => {
+      const newValue = typeof v === 'function' ? (v as (v: T) => T)(value) : v;
+      setValue(newValue);
+      setItem(key, newValue);
     },
-  ]
+    { dirty, previousValue },
+  ];
 }
 
 /** Returns value before update */
-export const usePrevious = <T = any>(value: T) => {
-  const ref = useRef<T | null>(null)
+export const usePrevious = <T = any>(value: any) => {
+  const ref = useRef<T>(undefined)
 
   useEffect(() => {
     ref.current = value
@@ -111,50 +123,31 @@ export const usePrevious = <T = any>(value: T) => {
   return ref.current
 }
 
-
-
-
-type WatchValuesType = Record<string, any>
-
-export function useWatchWithEffect<TFieldValues extends FieldValues>(
-  props: Partial<UseWatchProps<TFieldValues> & { name: undefined }>,
+type WatchValuesType = {[x: string]: any}
+/** Works like useWatch, but also do actions on some value change */
+export const useWatchWithEffect = <T extends FieldValues = FieldValues>(
+  props: {
+    defaultValue?: DeepPartialSkipArrayKey<T>;
+    control?: Control<T>;
+    disabled?: boolean;
+    exact?: boolean;
+  },
   callback: (values: WatchValuesType, previousValues: WatchValuesType | undefined) => void,
-): TFieldValues;
+) => {
+  const values = useWatch(props)
+  const previousValues = usePrevious<WatchValuesType>(values)
 
-
-export function useWatchWithEffect<TFieldValues extends FieldValues, TName extends ReadonlyArray<Path<TFieldValues>>>(
-  props: Partial<UseWatchProps<TFieldValues>> & { name: TName },
-  callback: (values: WatchValuesType, previousValues: WatchValuesType | undefined) => void,
-): DeepPartial<TFieldValues>;
-
-
-export function useWatchWithEffect<TFieldValues extends FieldValues, TName extends Path<TFieldValues>>(
-  props: Partial<UseWatchProps<TFieldValues>> & { name: TName },
-  callback: (values: WatchValuesType, previousValues: WatchValuesType | undefined) => void,
-): PathValue<TFieldValues, TName>;
-
-
-export function useWatchWithEffect<TFieldValues extends FieldValues>(
-  props: Partial<UseWatchProps<TFieldValues>>,
-  callback: (values: WatchValuesType, previousValues: WatchValuesType | undefined) => void,
-) {
-
-  const values = useWatch(props as any);
-
-
-  const previousValues = usePrevious<WatchValuesType>(values as WatchValuesType);
-
-  const previousValuesAdapted = previousValues === null ? undefined : previousValues;
   useEffect(() => {
-    if (previousValuesAdapted !== undefined && !_.isEqual(values, previousValuesAdapted)) {
-      callback(values as WatchValuesType, previousValuesAdapted);
+    if (!_.isEqual(values, previousValues)) {
+      callback(values, previousValues)
     }
-  }, [values, previousValuesAdapted, callback, ]); 
+  }, [values])
 
-  return values;
+  return values as T
 }
+
 export const useInterval = (callback: Function, delay: number, immediately?: boolean) => {
-  const savedCallback = useRef<Function>(null)
+  const savedCallback = useRef<Function>(undefined)
 
   useEffect(() => {
     savedCallback.current = callback
@@ -175,12 +168,15 @@ export const useInterval = (callback: Function, delay: number, immediately?: boo
 // export const useQuery = () => {
 //   return Object.fromEntries(new URLSearchParams(useLocation().search).entries())
 // }
+
+
 type QueryParams = Record<string, string | string[] | undefined>;
 
 export const useQuery = <T extends QueryParams = QueryParams>() => {
   const params = useLocalSearchParams() as T; 
   return params;
 };
+
 export const useVisibility = (defaultValue: boolean = false): [boolean, () => void] => {
   const [visible, setVisible] = React.useState(defaultValue)
 
@@ -188,3 +184,20 @@ export const useVisibility = (defaultValue: boolean = false): [boolean, () => vo
 
   return [visible, toggleVisibility]
 }
+
+export const useSimpleSelector = useReduxSelector.withTypes<IRootState>()
+export const useDispatch = useReduxDispatch.withTypes<IDispatch>()
+
+export function useSelector<
+  TSelector extends(state: IRootState, ...args: any[]) => any
+>(
+  selector: TSelector,
+  ...args: Parameters<TSelector> extends [any, ...infer Rest] ? Rest : never
+): ReturnType<TSelector> {
+  return useReduxSelector(useCallback(
+    (state: IRootState) => selector(state, ...args),
+    [selector, ...args],
+  ))
+}
+
+

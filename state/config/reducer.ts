@@ -1,16 +1,27 @@
-import { ActionTypes, IConfigState } from './constants'
-import { EStatuses, ILanguage } from '../../types/types'
-import { Record } from 'immutable'
-import { TAction } from '../../types'
-import SITE_CONSTANTS from '../../siteConstants'
+
+import { Record } from 'immutable';
+import SITE_CONSTANTS from '../../defaultValues';
+import { TAction } from '../../types';
+import { EStatuses, ILanguage } from '../../types/types';
+import { ActionTypes, IConfigState } from './constants';
+
+
+
+
+// export const record = Record<IConfigState>({
+//   status: EStatuses.Loading,
+//   language: SITE_CONSTANTS.LANGUAGES?.find(
+//     (i: any) => i.id.toString() === SITE_CONSTANTS.THE_LANGUAGE_OF_THE_SERVICE,
+//   ) as ILanguage,
+// })
 
 export const record = Record<IConfigState>({
   status: EStatuses.Loading,
-  language: SITE_CONSTANTS.LANGUAGES.find(
-    i => i.id.toString() === SITE_CONSTANTS.THE_LANGUAGE_OF_THE_SERVICE,
-  ) as ILanguage,
-})
 
+  language: Object.values(SITE_CONSTANTS.LANGUAGES).find(
+    (i: ILanguage) => i.id?.toString() === SITE_CONSTANTS.THE_LANGUAGE_OF_THE_SERVICE,
+  ) as ILanguage,
+});
 export default function reducer(state = new record(), action: TAction) {
   const { type, payload } = action
 
@@ -33,6 +44,7 @@ export default function reducer(state = new record(), action: TAction) {
         .set('status', EStatuses.Fail)
 
     case ActionTypes.SET_LANGUAGE:
+      console.log('Setting language in reducer:', payload)
       return state
         .set('language', payload)
 

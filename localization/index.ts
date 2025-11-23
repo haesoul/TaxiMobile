@@ -1,7 +1,9 @@
-import store from '../state'
-import TRANSLATION from './translation'
-import CATEGORIES from './categories'
-import { configSelectors } from '../state/config'
+import store, { IRootState } from '../state';
+import { configSelectors } from '../state/config';
+import CATEGORIES from './categories';
+import TRANSLATION from './translation';
+
+
 
 interface IOptions {
   /** Does result.toLowerCase() */
@@ -16,39 +18,38 @@ interface IOptions {
  * @param id CATEGORY.KEY or just KEY. Default category is lang_vls
  * @param options Result text modificators
  */
-const t = (id: string, options: IOptions = {}) => {
+function t(id: string, options: IOptions = {}) {
   try {
-    let category: any, key: any
+    const globalData: IRootState['global'] = store.getState().global;
     const splittedID = id.split('.')
 
-    if (splittedID.length === 2) {
-      category = splittedID[0]
-    } else {
-      category = CATEGORIES[6]
-    }
-
-    key = splittedID[splittedID.length - 1]
+    const category = splittedID.length === 2 ?
+      splittedID[0] :
+      CATEGORIES.LANG_VLS
+    const key = splittedID[splittedID.length - 1]
 
     const language = configSelectors.language(store.getState())
 
     let result = ''
 
-    const _data = (globalThis as any).data
+    // const _data = globals;
+    const _data: IRootState['global']['data'] & Record<string, any> = globalData.data
 
-    if (!_data) return 'Error'
-    // if (!_data) throw new Error('Data is not aviable')
 
-    if (CATEGORIES.slice(0, 6).includes(category)) {
-      if (category === CATEGORIES[4] && key === '0') {
-        result = _data.lang_vls.search[language.id]
-      } else {
-        result = _data[category][key][language.iso]
-      }
-    } else if (category === CATEGORIES[6]) {
-      result = _data[category][key][language.id]
-    } else {
-      throw new Error(`Unknown category ${category}`)
+    if (!_data || Object.keys(_data).length === 0) {
+      return 'Error';
     }
+    
+
+    const possibleCategories: string[] = Object.values(CATEGORIES)
+    if (category === CATEGORIES.LANG_VLS)
+      result = _data[category][key][language.id]
+    else if (category === CATEGORIES.BOOKING_DRIVER_STATES && key === '0')
+      result = _data.lang_vls.search[language.id]
+    else if (possibleCategories.includes(category))
+      result = _data[category][key][language.iso]
+    else
+      throw new Error(`Unknown category ${category}`)
 
     if (!result)
       throw new Error('Wrong key')
@@ -62,7 +63,13 @@ const t = (id: string, options: IOptions = {}) => {
 
     return result
   } catch (error) {
-    // console.warn(`Localization error. id: ${id}, options: ${JSON.stringify(options)}`, error)
+    if (!errorsShown.has(id)) {
+      console.warn(
+        `Localization error. id: ${id}, options: ${JSON.stringify(options)}`,
+        error,
+      )
+      errorsShown.add(id)
+    }
     return 'Error'
   }
 }
@@ -73,5 +80,7 @@ const t = (id: string, options: IOptions = {}) => {
 
 export {
   t,
-  TRANSLATION,
-}
+  TRANSLATION
+};
+
+const errorsShown = new Set<string>()

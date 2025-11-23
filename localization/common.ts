@@ -520,4 +520,14 @@ export default {
   CODE_WRITE: 'code_write_here',
   CODE_ERROR: 'code_error',
   CAR_WASH: 'car_wash',
+  CALCULATION: 'calculation',
+  FINAL_PRICE: 'final_price',
+  SIGN_IN_WITH_GOOGLE: 'sign_in_with_google',
+  DELETE: 'delete',
+  ADD: 'add',
+  PERMISSION_DENIED: 'permission_denied',
+  PICK_IMAGE: 'pick_image',
+  WORK_TYPE: 'work_type',
+  SELECT: 'select',
+  YOU: 'you'
 } as const

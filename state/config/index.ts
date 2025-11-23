@@ -7,5 +7,5 @@ export {
   configActionCreators,
   configConstants,
   configReducer,
-  configSelectors,
+  configSelectors
 }

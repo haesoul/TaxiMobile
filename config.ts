@@ -1,80 +1,99 @@
-import { getCacheVersion } from './API'
-import store from './state'
-import { setConfigError, setConfigLoaded } from './state/config/actionCreators'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { getCacheVersion } from './API/cacheVersion';
+import { DEFAULT_CONFIG_NAME } from './constants';
+import store from './state';
+import { setConfigError, setConfigLoaded } from './state/config/actionCreators';
+import { setConfig, setGlobalData } from './state/global/reducer';
 
-export const appName = 'taxi-web'
+export function getCacheVersionLazy(url: string) {
+  const { getCacheVersion } = require('./API/cacheVersion');
+  return getCacheVersion(url);
+}
 
-export const API_URL = 'https://ibronevik.ru/taxi/c/gruzvill/api/v1/'
+let _configName: string = '';
+interface ConfigData {
+  version: string
+  default_lang: number
+  default_currency: string
+  default_country: string
+  default_profile: string
+  data: any
+}
+export const applyConfigName = async (url: string, name?: string) => {
+  
+  const _name = name ? `data_${name}.json` : 'data.json'
 
-export const WHATSAPP_BOT_URL = 'http://localhost:7000'
-export const WHATSAPP_BOT_KEY = '1472'
-
-let _configName: string
-
-const applyConfigName = (url: string, name?: string) => {
-  const script = document.createElement('script'),
-    _name = name ? `data_${name}.js` : 'data.js'
-  getCacheVersion(url).then(ver => {
-    script.src = `https://ibronevik.ru/taxi/cache/${_name}?ver=${ver}`
-    script.async = true
-    script.onload = () => {
-      store.dispatch(setConfigLoaded())
+  try {
+    const ver = await getCacheVersionLazy(url)
+    
+    // const fullUrl = `https://ibronevik.ru/taxi/cache/${_name}?ver=${ver}`
+    const fullUrl = `https://ibronevik.ru/taxi/cache/data.json`
+    const response = await fetch(fullUrl)
+    console.warn('ERROR')
+    if (!response.ok) {
+      console.warn(`Fetch failed with status ${response.status}, using cached config`);
+      const cached = await AsyncStorage.getItem("config_cached");
+      if (cached) return JSON.parse(cached);
+      throw new Error(`Network error: ${response.status}`);
     }
-    script.onerror = () => {
-      store.dispatch(setConfigError())
-    }
+    
 
-    document.body.appendChild(script)
-  })
+    const json: ConfigData = await response.json()
+    const config = json.data
+    await AsyncStorage.setItem("config_cached", JSON.stringify(config));
+
+    store.dispatch(setGlobalData(config))
+    store.dispatch(setConfigLoaded())
+
+    const state = await store.getState();
+    const dataKeys = Object.keys(state.global.data);
+    console.warn('Keys in globals.data after Redux update:', dataKeys);
+
+  } catch (err) {
+    console.error('Failed to load config', err)
+    store.dispatch(setConfigError())
+
+    const configString = await AsyncStorage.getItem("config_cached");
+
+    if (configString !== null) {
+      try {
+        const config = JSON.parse(configString);
+        store.dispatch(setConfig(config));
+      } catch (e) {
+        console.warn("Invalid JSON in config_cached", e);
+      }
+    }
+    
+    store.dispatch(setConfigLoaded())
+  }
 }
 
 class Config {
   constructor() {
-    let params = new URLSearchParams(window.location.search),
-      configParam = params.get('config'),
-      clearConfigParam = params.get('clearConfig') !== null
 
-    if (clearConfigParam) {
-      this.clearConfig()
+    // this.init();
+  }
+
+  public async init() {
+    const savedConfig = await AsyncStorage.getItem('config');
+    if (savedConfig) {
+      _configName = savedConfig;
+      await applyConfigName(this.API_URL, savedConfig);
     } else {
-      if (configParam) {
-        this.setConfig(configParam)
-      }
-    }
-
-    if (!!configParam) {
-      params.delete('config')
-    }
-    if (!!clearConfigParam) {
-      params.delete('clearConfig')
-    }
-
-    if (configParam || clearConfigParam) {
-      const _path = window.location.origin + window.location.pathname
-      let _newUrl = params.toString() ?
-        _path + '?' + params.toString() :
-        _path
-      window.history.replaceState({}, document.title, _newUrl)
-    } else {
-      let _savedConfig = this.SavedConfig
-      if (!!_savedConfig) {
-        this.setConfig(_savedConfig)
-      } else {
-        this.setDefaultName()
-      }
+      this.setDefaultName();
     }
   }
 
-  setConfig(name: string) {
-    localStorage.setItem('config', name)
+  async setConfig(name: string) {
+    await AsyncStorage.setItem('config', name)
     _configName = name
-    applyConfigName(this.API_URL, name)
+    await applyConfigName(this.API_URL, name)
   }
 
-  clearConfig() {
-    localStorage.removeItem('config')
+  async clearConfig() {
+    await AsyncStorage?.removeItem('config')
     _configName = ''
-    applyConfigName(this.API_URL)
+    await applyConfigName(this.API_URL)
   }
 
   setDefaultName() {
@@ -82,12 +101,17 @@ class Config {
   }
 
   get API_URL() {
-    return _configName ? `https://ibronevik.ru/taxi/c/${_configName}/api/v1` : API_URL
+    return `${this.SERVER_URL}/api/v1`
   }
 
-  get SavedConfig() {
-    return localStorage.getItem('config')
+  get SERVER_URL() {
+    return `https://ibronevik.ru/taxi/c/${_configName || DEFAULT_CONFIG_NAME}`
   }
+
+  async getSavedConfig(): Promise<string | null> {
+    return await AsyncStorage.getItem('config');
+  }
+  
 }
 
 const config = new Config()

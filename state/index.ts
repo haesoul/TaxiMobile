@@ -1,19 +1,39 @@
-import { configureStore } from '@reduxjs/toolkit'
-import createSagaMiddleware from 'redux-saga'
-import rootReducer from './rootReducer'
-import rootSaga from './rootSaga'
+import { composeWithDevTools } from '@redux-devtools/extension';
+import { applyMiddleware, legacy_createStore as createStore } from 'redux';
+import createSagaMiddleware from 'redux-saga';
+import { thunk } from 'redux-thunk';
+
+// import thunkMiddleware from 'redux-thunk' // <-- Альтернативный вариант
+
+import rootReducer from './rootReducer';
+import rootSaga from './rootSaga';
 
 const sagaMiddleware = createSagaMiddleware()
 
-export const store = configureStore({
-  reducer: rootReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ thunk: true }).concat(sagaMiddleware),
-  devTools: process.env.NODE_ENV !== 'production',
-})
+export const configureStore = () => {
+  const middleware = [thunk, sagaMiddleware]
 
-sagaMiddleware.run(rootSaga)
+  const enhancer = composeWithDevTools(
+    applyMiddleware(...middleware)
+  )
+
+  const store = createStore(rootReducer, enhancer)
+
+  sagaMiddleware.run(rootSaga)
+
+  return store
+}
+
+const store = configureStore()
+
 export default store
 
 export type IRootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+// export type RootState = ReturnType<typeof rootReducer>;
+
+export type IDispatch = typeof store.dispatch
+
+
+
+
+

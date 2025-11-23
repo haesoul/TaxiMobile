@@ -1,6 +1,6 @@
+import state from '../state'
 import { userSelectors } from '../state/user'
 import { ParametersExceptFirst } from '../types'
-import state from '../state'
 
 export interface IApiMethodArguments {
   token: string,
@@ -13,7 +13,7 @@ interface apiMethodOptions {
 }
 
 export const apiMethod = <T extends (...args: any[]) => any>(
-  method: (...args: Parameters<T>) => ReturnType<T>,
+  method: T,
   {
     authRequired = true,
   }: apiMethodOptions = {},
@@ -44,6 +44,9 @@ export const apiMethod = <T extends (...args: any[]) => any>(
   }
 }
 
+
+
+
 export interface IResponseFields {
   /** Список валидных ключей */
   affected_fields: string[],
@@ -53,10 +56,35 @@ export interface IResponseFields {
   wrong_data_fields?: string[]
 }
 
-export const addToFormData = (formData: FormData, object: {[key: string]: any}) => {
-  for (let [key, value] of Object.entries(object)) {
-    if (!value) continue
-    formData.append(key, value)
+// export const addToFormData = (formData: FormData, object: {[key: string]: any}) => {
+//   for (let [key, value] of Object.entries(object)) {
+//     if (!value) continue
+//     formData.append(key, value)
+//   }
+//   return formData
+// }
+
+
+export const addToFormData = (formData: FormData, object: Record<string, any>) => {
+  for (const [key, value] of Object.entries(object)) {
+
+    if (value === undefined || value === null) continue
+
+    // Moment → string
+    if (typeof value === 'object' && value?._isAMomentObject) {
+      formData.append(key, value.toISOString())
+      continue
+    }
+
+    // Объекты и массивы → JSON
+    if (typeof value === 'object') {
+      formData.append(key, JSON.stringify(value))
+      continue
+    }
+
+    // Numbers / booleans → string
+    formData.append(key, String(value))
   }
+
   return formData
 }

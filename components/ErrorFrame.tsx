@@ -1,18 +1,59 @@
 import React from 'react'
+import { Image, StyleSheet, Text, View } from 'react-native'
 import images from '../constants/images'
 import { t, TRANSLATION } from '../localization'
 
 interface IProps {
-   title?: string,
-   image?: string,
-   renderImage?: () => any
+  title?: string
+  image?: any
+  renderImage?: () => any
 }
-// ErrorFrame!
-const LoadFrame: React.FC<IProps> = ({ title, image = images.error, renderImage }) => {
-  return <div className="loading-frame">
-    <div className="loading-frame__title">{title}</div>
-    {!!renderImage ? renderImage() : <img src={image} alt={t(TRANSLATION.ERROR)} style={{ marginTop: '20px' }}/>  }
-  </div>
+
+const LoadFrame: React.FC<IProps> = ({
+  title,
+  image = images.error,
+  renderImage
+}) => {
+  return (
+    <View style={styles.loadingFrame}>
+      {!!title && <Text style={styles.loadingFrameTitle}>{title}</Text>}
+
+      {renderImage
+        ? renderImage()
+        : (
+          <Image
+            source={image}
+            style={styles.loadingFrameImage}
+            accessibilityLabel={t(TRANSLATION.ERROR)}
+            resizeMode="contain"
+          />
+        )
+      }
+    </View>
+  )
 }
 
 export default LoadFrame
+
+
+const styles = StyleSheet.create({
+  loadingFrame: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+  },
+
+  loadingFrameTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+
+  loadingFrameImage: {
+    marginTop: 20,
+    width: 100,
+    height: 100,
+  }
+})

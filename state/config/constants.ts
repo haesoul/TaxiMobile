@@ -1,4 +1,4 @@
-import { appName } from '../../config'
+import { appName } from '../../constants'
 import { EStatuses, ILanguage } from '../../types/types'
 
 export const moduleName = 'config' as const
@@ -16,6 +16,9 @@ export const ActionTypes = {
   SET_CONFIG_LOADED_REQUEST: `${prefix}/SET_CONFIG_LOADED_REQUEST`,
   SET_CONFIG_SUCCESS: `${prefix}/SET_CONFIG_LOADED`,
   SET_CONFIG_FAIL: `${prefix}/SET_CONFIG_FAIL`,
+
+
+
 
   SET_LANGUAGE_REQUEST: `${prefix}/SET_LANGUAGE_REQUEST`,
   SET_LANGUAGE: `${prefix}/SET_LANGUAGE`,

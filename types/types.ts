@@ -4,6 +4,11 @@ import { EMoveTypes } from '../components/passenger-order/move/MoveTypeTabs'
 import { IBigTruckService } from '../constants/bigTruckServices'
 import { IDateTime } from '../tools/dateTime'
 
+export type {
+  IArea,
+  IWay, IWayNode, IWaySegment, IWayTurnRestriction
+} from './way'
+
 export enum EPointType {
   From,
   To
@@ -23,11 +28,12 @@ export enum ECurrency {
   USD = 'USD'
 }
 
-export enum ECarClasses {
-  Any,
-  Economy,
-  Comfort,
-  Business
+export interface ICarClass {
+  id: string
+  seats: number
+  courier_call_rate: number
+  courier_fare_per_1_km: number
+  booking_location_classes: IBookingLocationClass['id'][] | null
 }
 
 export enum EBookingStates {
@@ -48,9 +54,15 @@ enum EContactClasses {
   WhatsApp
 }
 
-enum EBookingLocationClasses {
-  City = 1,
-  Intercity
+export enum EBookingLocationKinds {
+  City,
+  Intercity,
+  Location
+}
+
+export interface IBookingLocationClass {
+  id: string
+  kind: EBookingLocationKinds
 }
 
 export enum EBookingDriverState {
@@ -110,6 +122,16 @@ export interface ICarOptions {
   performers_price: number
 }
 
+export enum EBookingCommentTypes {
+  Any,
+  Plane
+}
+
+export interface IBookingComment {
+  id: string
+  type: EBookingCommentTypes
+}
+
 export interface IDriver {
   /** Идентификатор водителя */
   u_id: string,
@@ -153,6 +175,7 @@ export interface IDriver {
 }
 
 export interface IOptions {
+  submitPrice?: string;
   fromShortAddress?: string
   toShortAddress?: string
   courier_auto?: string | ECourierAutoTypes
@@ -193,10 +216,31 @@ export interface IOptions {
   carsCount?: number
   bigTruckCarTypes?: string[]
   bigTruckCarLogic?: ELogic
-  bigTruckServices?: IBigTruckService['id'][]
+  bigTruckServices?: IBigTruckService['id'][],
+  createdBy?: string,
+  pricingModel?: {
+    price: number,
+    formula: string,
+    options: {
+        [key: string]: any
+    },
+    calculationType?: string
+  }
 }
 
-export interface IOrder extends IBookingCoordinates, IBookingAddresses {
+export enum EOrderProfitRank {
+  Low,
+  Medium,
+  High,
+}
+
+export interface IOrderEstimation {
+  profit?: number,
+  profitRank?: EOrderProfitRank,
+}
+
+export interface IOrder
+  extends IBookingCoordinates, IBookingAddresses, IOrderEstimation {
   /** Идентификатор поездки */
   b_id: string
   /** Идентификатор клиента */
@@ -216,7 +260,7 @@ export interface IOrder extends IBookingCoordinates, IBookingAddresses {
   /** Текст на табличке */
   b_placard?: string
   /** Идентификатор класса машины */
-  b_car_class: ECarClasses
+  b_car_class: string
   /** Идентификатор статуса поезки */
   b_state: EBookingStates
   /** Дата создания поездки */
@@ -238,7 +282,7 @@ export interface IOrder extends IBookingCoordinates, IBookingAddresses {
   /** Контакты для связи */
   b_contact: EContactClasses[]
   /** Идентификатор типа дальности поездки */
-  b_location_class: EBookingLocationClasses
+  b_location_class: string
   /** Оценочное расстояние маршрута в метрах */
   b_distance_estimate?: number
   /** Оценочная цена маршрута */
@@ -296,7 +340,8 @@ export interface IOrder extends IBookingCoordinates, IBookingAddresses {
   /** Дата предложения поездки клиентом поездки */
   b_offer_datetime: Moment
   /** Дата приема поездки на исполнение */
-  b_select_datetime: Moment
+  b_select_datetime: Moment,
+  user?: IUser
 }
 
 export interface ITrip {
@@ -346,7 +391,7 @@ export interface IPlaceResponse {
   type?: string,
   importance?: number,
   icon?: string,
-  address: IAddressResponse,
+  address: IAddressDetails,
   extratags?: {
     capital?: 'yes' | 'no',
     website?: string,
@@ -356,7 +401,7 @@ export interface IPlaceResponse {
   }
 }
 
-interface IAddressResponse {
+export interface IAddressDetails {
   continent?: string,
   country?: string,
   country_code?: string,
@@ -433,7 +478,7 @@ export interface ICar {
   /** json данные для дальнейшей обработки */
   details?: any,
   /** Идентификатор класса машины */
-  cc_id: ECarClasses
+  cc_id: ICarClass['id']
 }
 
 export enum EUserRoles {
@@ -448,7 +493,7 @@ export enum EWorkTypes {
   Company
 }
 
-enum EUserCheckStates {
+export enum EUserCheckStates {
   Required = 1,
   Active,
   Rejected,
@@ -547,7 +592,9 @@ export interface IUser {
     passport_photo?: number[]
     driver_license_photo?: number[]
     license_photo?: number[],
-    subscribe?: boolean
+    subscribe?: boolean,
+    carMark?: string,
+    carModel?: string,
   }
   //
   u_registration: Moment
@@ -555,8 +602,6 @@ export interface IUser {
   u_choosen?: number
   ref_code?: string
   role: EUserRoles
-  // Машин пользователя (если он является водителем)
-  u_car: any
   token?: string
   u_hash?: string
   uploads?: any[]
@@ -581,6 +626,13 @@ export interface IAddressPoint {
   shortAddress?: string,
   latitude?: number,
   longitude?: number
+}
+
+export interface ILoadedAddressPoint extends IAddressPoint {
+  address: string
+  latitude: number
+  longitude: number
+  details: IAddressDetails
 }
 
 export enum EStatuses {
@@ -702,4 +754,21 @@ export type TFilesMap = {
 
 export interface IRequiredFields {
   [key: string]: boolean
+}
+
+export interface IProfitEstimationFactors {
+  fuel_cost: number
+  rate: number
+  base_fare: number
+  min_fare: number
+}
+
+export interface IProfitEstimationTimeModification
+  extends Partial<IProfitEstimationFactors> {
+  start: Moment
+  end: Moment
+}
+
+export interface IProfitEstimationConfig extends IProfitEstimationFactors {
+  time_modifications: IProfitEstimationTimeModification[]
 }

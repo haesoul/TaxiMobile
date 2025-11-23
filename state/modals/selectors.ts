@@ -1,8 +1,10 @@
 import { createSelector } from 'reselect'
+import { IRootState } from '..'
 import { moduleName } from './constants'
-import { IRootState } from '../'
 
 export const moduleSelector = (state: IRootState) => state[moduleName]
+// export const moduleSelector = (state: IRootState) => state[moduleName as keyof IRootState]
+
 export const isCancelModalOpen = createSelector(moduleSelector, state => state.isCancelModalOpen)
 export const isPickTimeModalOpen = createSelector(moduleSelector, state => state.isPickTimeModalOpen)
 export const isCommentsModalOpen = createSelector(moduleSelector, state => state.isCommentsModalOpen)
@@ -40,3 +42,8 @@ export const deleteFilesModalDeleteFile = createSelector(
 export const deleteFilesModalDeleteFiles = createSelector(
   moduleSelector, state => state.deleteFilesModal.handleDeleteFiles,
 )
+export const isShowSwitchersMenu = createSelector(moduleSelector, state => state.isShowSwitchersMenu)
+export const orderCardModal = (state: IRootState) =>
+  moduleSelector(state).orderCardModal
+export const isOrderCardModalOpen = (state: IRootState) =>
+  orderCardModal(state).isOpen

@@ -1,8 +1,9 @@
-import { IAddressPoint, IOrder } from '../../types/types'
-import { EStatuses } from '../../types/types'
-import { appName } from '../../config'
+import { appName } from '../../constants'
+import { EStatuses, IAddressPoint, IOrder } from '../../types/types'
 
-export const moduleName = 'modals'
+// export const moduleName = 'modals'
+export const moduleName = 'modals' as const
+
 
 const prefix = `${appName}/${moduleName}`
 
@@ -35,6 +36,8 @@ export const ActionTypes = {
   SET_PROFILE_MODAL: `${prefix}/SET_PROFILE_MODAL`,
   SET_CANDIDATES_MODAL: `${prefix}/SET_CANDIDATES_MODAL`,
   SET_DELETE_FILES_MODAL: `${prefix}/SET_DELETE_FILES_MODAL`,
+  SET_SHOW_SWITCHERS_MENU: `${prefix}/SET_SHOW_SWITCHERS_MENU`,
+  SET_ORDER_CARD_MODAL: `${prefix}/SET_ORDER_CARD_MODAL`,
 } as const
 
 export enum EMapModalTypes {
@@ -44,60 +47,67 @@ export enum EMapModalTypes {
 }
 
 export interface IModalsState {
-  isCancelModalOpen: boolean,
-  isPickTimeModalOpen: boolean,
-  isCommentsModalOpen: boolean,
-  isDriverModalOpen: boolean,
-  isTieCardModalOpen: boolean,
-  isCardDetailsModalOpen: boolean,
-  isVoteModalOpen: boolean,
-  isSeatsModalOpen: boolean,
-  isLoginModalOpen: boolean,
+  isCancelModalOpen: boolean
+  isPickTimeModalOpen: boolean
+  isCommentsModalOpen: boolean
+  isDriverModalOpen: boolean
+  isTieCardModalOpen: boolean
+  isCardDetailsModalOpen: boolean
+  isVoteModalOpen: boolean
+  isSeatsModalOpen: boolean
+  isLoginModalOpen: boolean
   isCandidatesModalOpen: boolean
+  isShowSwitchersMenu: boolean
   WACodeModal: {
-    isOpen: boolean,
-    login: any,
-    data: any,
-  },
-  RefCodeModal: {
-    isOpen: boolean,
-    login: any,
+    isOpen: boolean
+    login: any
     data: any
-  },
+  }
+  RefCodeModal: {
+    isOpen: boolean
+    login: any
+    data: any
+  }
   alarmModal: {
-    isOpen: boolean,
-    seconds: number,
-  },
+    isOpen: boolean
+    seconds: number
+  }
   takePassengerModal: {
-    isOpen: boolean,
-    from?: IAddressPoint | null | undefined,
+    isOpen: boolean
+    from?: IAddressPoint | null | undefined
     to?: IAddressPoint | null | undefined
-  },
-  isDriverCancelModalOpen: boolean,
-  isOnTheWayModalOpen: boolean,
+  }
+  isDriverCancelModalOpen: boolean
+  isOnTheWayModalOpen: boolean
   mapModal: {
-    isOpen: boolean,
-    type?: EMapModalTypes,
+    isOpen: boolean
+    type?: EMapModalTypes
     defaultCenter?: [number, number] | null
   }
   messageModal: {
-    isOpen: boolean,
-    status?: EStatuses,
-    message?: string
-  },
-  ratingModal: {
-    isOpen: boolean,
-    orderID?: IOrder['b_id'] | null
-  },
-  /** "${from};${to}" */
-  activeChat: string | null,
-  profileModal: {
-    isOpen: boolean,
+    isOpen: boolean
     status?: EStatuses
-  },
+    message?: string
+  }
+  ratingModal: {
+    isOpen: boolean
+    orderID?: IOrder['b_id'] | null
+  }
+  /** "${from};${to}" */
+  activeChat: string | null
+  profileModal: {
+    isOpen: boolean
+    status?: EStatuses
+  }
   deleteFilesModal: {
-    isOpen: boolean,
-    handleDeleteFile?: () => any,
+    isOpen: boolean
+    handleDeleteFile?: () => any
     handleDeleteFiles?: () => any
-  },
+  }
+  orderCardModal: {
+    isOpen: boolean
+    orderId: IOrder['b_id']
+  } | {
+    isOpen: false
+  }
 }

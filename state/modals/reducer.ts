@@ -46,6 +46,9 @@ export const defaultProfileModal = {
 export const defaultDeleteFilesModal = {
   isOpen: false,
 }
+const defaultOrderCardModal = {
+  isOpen: false,
+} as const
 
 export const record = Record<IModalsState>({
   isCancelModalOpen: false,
@@ -55,6 +58,7 @@ export const record = Record<IModalsState>({
   isTieCardModalOpen: false,
   isCardDetailsModalOpen: false,
   isVoteModalOpen: false,
+  isShowSwitchersMenu: false,
   WACodeModal: { ...defaultWACodeModal },
   RefCodeModal: { ...defaultRefCodeModal },
   isSeatsModalOpen: false,
@@ -70,6 +74,7 @@ export const record = Record<IModalsState>({
   ratingModal: { ...defaultRatingModal },
   activeChat: null,
   deleteFilesModal: { ...defaultDeleteFilesModal },
+  orderCardModal: defaultOrderCardModal,
 })
 
 export default function reducer(state = new record(), action: TAction) {
@@ -151,6 +156,9 @@ export default function reducer(state = new record(), action: TAction) {
     case ActionTypes.SET_DELETE_FILES_MODAL:
       return state
         .set('deleteFilesModal', payload)
+    case ActionTypes.SET_ORDER_CARD_MODAL:
+      return state
+        .set('orderCardModal', payload)
     case ActionTypes.CLOSE_ALL_MODALS:
       return state
         .set('isCancelModalOpen', false)
@@ -172,6 +180,9 @@ export default function reducer(state = new record(), action: TAction) {
         .set('ratingModal', { ...defaultRatingModal })
         .set('profileModal', { ...defaultProfileModal })
         .set('deleteFilesModal', { ...defaultDeleteFilesModal })
+        .set('orderCardModal', defaultOrderCardModal)
+    case ActionTypes.SET_SHOW_SWITCHERS_MENU:
+      return state.set('isShowSwitchersMenu', payload)
     default:
       return state
   }

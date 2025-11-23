@@ -1,10 +1,11 @@
-import { all, put } from 'redux-saga/effects'
-import { ActionTypes } from './constants'
-import { call, takeEvery } from '../../tools/sagaUtils'
+import { all, put, takeEvery } from 'redux-saga/effects'
+import store from '..'
 import * as API from '../../API'
-import { TAction } from '../../types'
 import Config from '../../config'
 import SITE_CONSTANTS, { CURRENCY } from '../../siteConstants'
+import { call } from '../../tools/sagaUtils'
+import { TAction } from '../../types'
+import { ActionTypes } from './constants'
 
 export const saga = function* () {
   yield all([
@@ -33,11 +34,12 @@ function* clearConfigSaga() {
 }
 
 function* setConfigLoadedSaga() {
+  const globalData = store.getState().global;
   SITE_CONSTANTS.recalculate()
   CURRENCY.recalculated()
 
   setTimeout(() => {
-    (window as any).preloader?.classList.remove('active')
+    globalData.preloader?.classList?.remove('active')
   }, 1000)
 
   yield put({ type: ActionTypes.SET_CONFIG_SUCCESS })

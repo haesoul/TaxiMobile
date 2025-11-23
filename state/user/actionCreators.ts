@@ -1,15 +1,22 @@
+import * as API from '../../API'
+import { createUserCar } from '../cars/actionCreators'
 import { ActionTypes, IUserState } from './constants'
-import * as API from './../../API'
 
-export const register = (payload: Parameters<typeof API.register>[0]) => {
+export const register = (payload: Parameters<typeof API.register>[0] & {
+  u_car?: Parameters<typeof createUserCar>[0]
+}) => {
   return { type: ActionTypes.REGISTER_REQUEST, payload }
 }
 
-export const login = (payload: Parameters<typeof API.login>[0]) => {
+export const login = (payload: Parameters<typeof API.login>[0] & {
+  navigate: (location: string) => void
+}) => {
   return { type: ActionTypes.LOGIN_REQUEST, payload }
 }
 
-export const googleLogin = (payload: Parameters<typeof API.googleLogin>[0]) => {
+export const googleLogin = (payload: Parameters<typeof API.googleLogin>[0] & {
+  navigate: (location: string) => void
+}) => {
   return { type: ActionTypes.GOOGLE_LOGIN_REQUEST, payload }
 }
 
@@ -47,4 +54,10 @@ export const initUser = () => {
 
 export const setUser = (payload: IUserState['user']) => {
   return { type: ActionTypes.SET_USER, payload }
+}
+
+export const whatsappSignUp = (payload: Parameters<typeof API.whatsappSignUp>[0] & {
+  navigate: (location: string) => void
+}) => {
+  return { type: ActionTypes.WHATSAPP_SIGNUP_REQUEST, payload }
 }
