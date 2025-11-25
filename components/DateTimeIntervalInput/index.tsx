@@ -1,12 +1,11 @@
 import React from 'react'
 import {
   Image,
-  ImageSourcePropType,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native'
 import images from '../../constants/images'
 import { t, TRANSLATION } from '../../localization'
@@ -180,7 +179,7 @@ const DateTimeIntervalInput: React.FC<IProps> = ({ value, onChange, isSimple }) 
               value: isDateInterval,
               onClick: handleIsDateIntervalChange,
               // show image icon
-              component: <Image source={images.interval as ImageSourcePropType} style={rnStyles.icon} />,
+              component: <View style={rnStyles.icon} ><images.interval width={20} height={20}/></View>,
             }
           }
           compareVariant={isDateInterval || isSimple ? undefined : value.dateComparator}
@@ -213,7 +212,7 @@ const DateTimeIntervalInput: React.FC<IProps> = ({ value, onChange, isSimple }) 
             isSimple ? undefined : {
               value: isTimeInterval,
               onClick: handleIsTimeIntervalChange,
-              component: <Image source={images.interval as ImageSourcePropType} style={rnStyles.icon} />,
+              component: <View style={rnStyles.icon}><images.interval width={20} height={20} /></View>,
             }
           }
           compareVariant={isTimeInterval || isSimple ? undefined : value.timeComparator}

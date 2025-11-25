@@ -87,10 +87,10 @@ const RatingModal: React.FC<IProps> = ({ isOpen, orderID, selectedOrder, setRati
           {finalPriceFormula !== 'err' && (
             <View>
               <Text>
-                {t(TRANSLATION.FINAL_PRICE)}: {CURRENCY.SIGN} {finalPrice}
+                {t(TRANSLATION.PRICE_P)}: {CURRENCY.SIGN} {finalPrice}
               </Text>
               <Text>
-                {t(TRANSLATION.CALCULATION)}: {finalPriceFormula}
+                {t(TRANSLATION.ESTIMATE)}: {finalPriceFormula}
               </Text>
             </View>
           )}

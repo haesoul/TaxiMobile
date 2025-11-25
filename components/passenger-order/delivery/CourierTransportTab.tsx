@@ -35,7 +35,7 @@ const CouriersTransportTabs: React.FC<IProps> = ({ tab, onChange, visible }) => 
     ? SITE_CONSTANTS.LIST_OF_MODES_USED['3'].subs
     : null
 
-  // Исправление TS2322 и TS2677
+
   const _tabs: ITab[] = useMemo(() => {
     if (!_availableCourierTransport) return []
 

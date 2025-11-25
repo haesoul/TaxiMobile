@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
-  Image,
   Modal,
   Alert as RNAlert,
   // SafeAreaView,
@@ -35,6 +34,7 @@ import {
   ICar,
   IUser,
 } from '../../types/types'
+import SmartImage from '../SmartImage'
 import { styles } from './STYLES'
 
 // ---------- constants same as web ----------
@@ -104,7 +104,7 @@ function JSONFormRN({
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
       if (!perm.granted) {
-        RNAlert.alert(t(TRANSLATION.PERMISSION_DENIED) || 'Permission denied')
+        RNAlert.alert(t(TRANSLATION.UNAUTHORIZED_ACCESS) || 'Permission denied')
         return
       }
       const res = await ImagePicker.launchImageLibraryAsync({
@@ -178,7 +178,7 @@ function JSONFormRN({
                 {field.label && <Text style={{ marginBottom: 6 }}>{field.label}</Text>}
                 <View style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8 }}>
                   <Picker selectedValue={value} onValueChange={(v) => change(name, v)}>
-                    <Picker.Item label={field.placeholder || t(TRANSLATION.SELECT) || 'Select'} value={undefined} />
+                    <Picker.Item label={field.placeholder || t(TRANSLATION.SELECT_ONE_OPTION_FROM_THE_LIST) || 'Select'} value={undefined} />
                     {(field.options || []).map((o: any) => <Picker.Item key={String(o.value)} label={o.label} value={o.value} />)}
                   </Picker>
                 </View>
@@ -189,12 +189,12 @@ function JSONFormRN({
               <View key={name} style={{ marginBottom: 12 }}>
                 {field.label && <Text style={{ marginBottom: 6 }}>{field.label}</Text>}
                 <TouchableOpacity onPress={() => pickImage(name, !!field.multiple)} style={[styles.profileModalButton, { padding: 10, borderWidth: 1, borderColor: '#ddd', borderRadius: 8 }]}>
-                  <Text>{t(TRANSLATION.PICK_IMAGE) || 'Pick image'}</Text>
+                  <Text>{t(TRANSLATION.ADD_IMAGES) || 'Pick image'}</Text>
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
                   {Array.isArray(value) ? value.map((f: RNFile, i: number) => (
-                    <Image key={i} source={{ uri: f.uri }} style={{ width: 64, height: 64, marginRight: 8, borderRadius: 6 }} />
-                  )) : (value ? <Image source={{ uri: (value as RNFile).uri }} style={{ width: 64, height: 64, marginRight: 8, borderRadius: 6 }} /> : null)}
+                    <SmartImage key={i} source={{ uri: f.uri }} style={{ width: 64, height: 64, marginRight: 8, borderRadius: 6 }} />
+                  )) : (value ? <SmartImage source={{ uri: (value as RNFile).uri }} style={{ width: 64, height: 64, marginRight: 8, borderRadius: 6 }} /> : null)}
                 </View>
               </View>
             )
@@ -249,7 +249,7 @@ function ProfileModal(props: PropsFromRedux) {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
       if (!permission.granted) {
-        RNAlert.alert(t(TRANSLATION.PERMISSION_DENIED) || 'Permission denied')
+        RNAlert.alert(t(TRANSLATION.UNAUTHORIZED_ACCESS) || 'Permission denied')
         return
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -483,7 +483,7 @@ function ProfileModal(props: PropsFromRedux) {
               <TouchableOpacity onPress={onChangeAvatar}>
                 <View style={styles.profileModalAvatarImage}>
                   {isValuesLoaded ? (
-                    <Image source={{ uri: user?.u_photo || '' }} style={styles.profileModalAvatarImageBg as any} />
+                    <SmartImage source={{ uri: user?.u_photo || '' }} style={styles.profileModalAvatarImageBg as any} />
                   ) : (
                     <View style={{ width: 100, height: 100, justifyContent: 'center', alignItems: 'center' }}>
                       <ActivityIndicator />

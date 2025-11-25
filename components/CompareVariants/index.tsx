@@ -1,13 +1,5 @@
 import React from 'react'
-import {
-  Image,
-  ImageSourcePropType,
-  ImageStyle,
-  Pressable,
-  StyleSheet,
-  View,
-  ViewStyle
-} from 'react-native'
+import { Pressable, StyleSheet, View, ViewStyle } from 'react-native'
 import images from '../../constants/images'
 import { t, TRANSLATION } from '../../localization'
 import { gradient } from '../../tools/theme'
@@ -23,12 +15,10 @@ interface IProps {
   onChange: (value: ECompareVariants) => any
 }
 
-
 const resolveSelectedBackground = (): string => {
   try {
     const g = gradient?.()
     if (!g || typeof g !== 'string') return '#2b8cff'
-
 
     const simpleColorMatch = g.match(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\))/)
     if (simpleColorMatch) return simpleColorMatch[0]
@@ -42,29 +32,26 @@ const resolveSelectedBackground = (): string => {
   }
 }
 
-
 const selectedBackground = resolveSelectedBackground()
 
 const CompareVariants: React.FC<IProps> = ({ value, onChange }) => {
-
   const variants: ECompareVariants[] = [
     ECompareVariants.Greater,
     ECompareVariants.Equal,
     ECompareVariants.Less,
   ]
 
-  const getImageSource = (variant: ECompareVariants): ImageSourcePropType => {
+  const getImageComponent = (variant: ECompareVariants) => {
     switch (variant) {
       case ECompareVariants.Equal:
-        return { uri: images.equal }
+        return images.equal
       case ECompareVariants.Less:
-        return { uri: images.less }
+        return images.less
       case ECompareVariants.Greater:
       default:
-        return { uri: images.more }
+        return images.more
     }
   }
-  
 
   const getAlt = (variant: ECompareVariants) => {
     switch (variant) {
@@ -78,6 +65,8 @@ const CompareVariants: React.FC<IProps> = ({ value, onChange }) => {
     <View style={styles.container}>
       {variants.map(variant => {
         const selected = value === variant
+        const ImageComponent = getImageComponent(variant)
+
         return (
           <Pressable
             key={variant}
@@ -89,15 +78,9 @@ const CompareVariants: React.FC<IProps> = ({ value, onChange }) => {
             accessibilityRole="button"
             accessibilityLabel={getAlt(variant)}
           >
-            <Image
-              source={getImageSource(variant)}
-              style={[
-                styles.icon,
-                selected && styles.iconSelected,
-                selected && { tintColor: '#fff' } as ImageStyle,
-              ]}
-              accessibilityLabel={getAlt(variant)}
-            />
+            <View>
+              <ImageComponent width={24} height={24} />
+            </View>
           </Pressable>
         )
       })}
@@ -109,7 +92,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-
     marginTop: 10,
   },
   item: {
@@ -120,14 +102,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
     backgroundColor: 'transparent',
-  },
-  icon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  iconSelected: {
-
   },
 })
 

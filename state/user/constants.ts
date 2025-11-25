@@ -1,7 +1,7 @@
-import { ArrayValue } from './../../types/index'
 import { appName } from '../../constants'
 import { TRANSLATION } from '../../localization'
 import { EStatuses, IRegisterResponse, ITokens, IUser } from '../../types/types'
+import { ArrayValue } from './../../types/index'
 
 export const moduleName = 'user' as const
 

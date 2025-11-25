@@ -256,7 +256,7 @@ function JSONFormElement({
           }}
           disabled={!!element.disabled}
         >
-          <Text>{(t(TRANSLATION.ADD) as unknown) as string}</Text>
+          <Text>{(t(TRANSLATION.ADD_ITEM) as unknown) as string}</Text>
         </TouchableOpacity>
         <View style={styles.elementFileList}>
           {(Array.isArray(value) ? value : []).map((f: any, idx: number) => (
@@ -269,7 +269,7 @@ function JSONFormElement({
                   onChange(null, name, arr)
                 }}
               >
-                <Text>{(t(TRANSLATION.DELETE) as unknown) as string}</Text>
+                <Text>{(t(TRANSLATION.CANCEL) as unknown) as string}</Text>
               </TouchableOpacity>
             </View>
           ))}

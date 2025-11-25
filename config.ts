@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_CONFIG_NAME } from './constants';
 import store from './state';
 import { setConfigError, setConfigLoaded } from './state/config/actionCreators';
-import { setConfig, setGlobalData } from './state/global/reducer';
+import { setGlobalData } from './state/global/reducer';
 
 export function getCacheVersionLazy(url: string) {
   const { getCacheVersion } = require('./API/cacheVersion');
@@ -19,17 +19,17 @@ interface ConfigData {
   default_profile: string
   data: any
 }
+
 export const applyConfigName = async (url: string, name?: string) => {
   
   const _name = name ? `data_${name}.json` : 'data.json'
-
+  // console.log(await AsyncStorage.getItem("config_cached"))
   try {
     const ver = await getCacheVersionLazy(url)
     
     // const fullUrl = `https://ibronevik.ru/taxi/cache/${_name}?ver=${ver}`
     const fullUrl = `https://ibronevik.ru/taxi/cache/data.json`
     const response = await fetch(fullUrl)
-    console.warn('ERROR')
     if (!response.ok) {
       console.warn(`Fetch failed with status ${response.status}, using cached config`);
       const cached = await AsyncStorage.getItem("config_cached");
@@ -37,17 +37,12 @@ export const applyConfigName = async (url: string, name?: string) => {
       throw new Error(`Network error: ${response.status}`);
     }
     
-
     const json: ConfigData = await response.json()
     const config = json.data
     await AsyncStorage.setItem("config_cached", JSON.stringify(config));
 
     store.dispatch(setGlobalData(config))
     store.dispatch(setConfigLoaded())
-
-    const state = await store.getState();
-    const dataKeys = Object.keys(state.global.data);
-    console.warn('Keys in globals.data after Redux update:', dataKeys);
 
   } catch (err) {
     console.error('Failed to load config', err)
@@ -58,7 +53,8 @@ export const applyConfigName = async (url: string, name?: string) => {
     if (configString !== null) {
       try {
         const config = JSON.parse(configString);
-        store.dispatch(setConfig(config));
+        
+        store.dispatch(setGlobalData(config));
       } catch (e) {
         console.warn("Invalid JSON in config_cached", e);
       }
@@ -67,6 +63,7 @@ export const applyConfigName = async (url: string, name?: string) => {
     store.dispatch(setConfigLoaded())
   }
 }
+
 
 class Config {
   constructor() {

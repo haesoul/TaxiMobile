@@ -2,7 +2,7 @@ import { Dimensions, StyleSheet } from 'react-native';
 
 const windowHeight = Dimensions.get('window').height;
 const formPlaceholderHeight = 208 - 16;
-const formContainerTop = -40 - 8 - 16;
+const formContainerTop = -40 - 8 + 36;
 
 const styles = StyleSheet.create({
   passengerMiniOrders: {
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
     flexDirection: 'column',
     rowGap: 8,
-    overflow: 'hidden',
+    // overflow: 'hidden',
     width: '100%',
     minHeight: Math.min(520, windowHeight),
     maxHeight: '100%',
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     top: 4,
     left: '50%',
     width: 114,
-    height: 4,
+    minHeight: 4,
     backgroundColor: '#E7E7E7',
     borderRadius: 2,
     transform: [{ translateX: -57 }],
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     columnGap: 12,
-    height: 56,
+    minHeight: 56,
     paddingTop: 6,
   },
 
@@ -177,18 +177,20 @@ const styles = StyleSheet.create({
 
   passengerVotingFormTimeWrapper: {
     flexDirection: 'column',
-    height: 28,
+    minHeight: 28,
   },
 
   passengerVotingFormTimeValue: {
     fontSize: 10,
     fontWeight: '500',
     color: 'rgba(0,0,0,0.5)',
+    flexShrink: 1
+
   },
 
   passengerVotingFormTimeBtn: {
     width: 34,
-    height: 24,
+    minHeight: 24,
     paddingHorizontal: 5,
     paddingVertical: 0,
   },
@@ -231,11 +233,13 @@ const styles = StyleSheet.create({
   passengerVotingFormCarNearbyInfoText: {
     fontSize: 10,
     fontWeight: '500',
+    flexShrink: 1
+
   },
 
   passengerVotingFormComments: {
     width: '100%',
-    height: 40,
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
   passengerVotingFormCommentsWrapper: {
     flexDirection: 'column',
     alignItems: 'flex-start',
-    overflow: 'hidden',
+    // overflow: 'hidden',
   },
 
   passengerVotingFormCommentsTitle: {
@@ -259,7 +263,9 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.5)',
     textAlign: 'left',
     maxWidth: '100%',
-    overflow: 'hidden',
+    flexShrink: 1
+
+    // overflow: 'hidden',
   },
 
   passengerVotingFormCommentsBtn: {
@@ -268,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     width: 80,
-    height: 40,
+    minHeight: 40,
   },
 });
 

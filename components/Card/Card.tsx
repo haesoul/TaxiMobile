@@ -1,7 +1,8 @@
 import store from '@/state'
 import React from 'react'
-import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import SITE_CONSTANTS from '../../siteConstants'
+import SmartImage from '../SmartImage'
 
 interface IProps {
   src?: ImageSourcePropType
@@ -23,7 +24,7 @@ const Card: React.FC<IProps> = ({ src, text, active, style, onPress, disabled, p
       onPress={disabled ? undefined : onPress}
       activeOpacity={0.8}
     >
-      {src && <Image source={src} style={[styles.image, active && styles.imageActive]} />}
+      {src && <SmartImage source={src} style={[styles.image, active && styles.imageActive]} />}
       <View style={[styles.separator, { borderColor: color }]} />
       {text && <Text style={[styles.text, { color }]}>{text}</Text>}
       {payment && <Text style={[styles.payment, { color: SITE_CONSTANTS.PALETTE.primary.light }]}>{payment}</Text>}

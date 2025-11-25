@@ -1,7 +1,6 @@
 import React from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import images from '../constants/images'
-import { t, TRANSLATION } from '../localization'
 
 interface IProps {
   title?: string
@@ -21,12 +20,15 @@ const LoadFrame: React.FC<IProps> = ({
       {renderImage
         ? renderImage()
         : (
-          <Image
-            source={image}
-            style={styles.loadingFrameImage}
-            accessibilityLabel={t(TRANSLATION.ERROR)}
-            resizeMode="contain"
-          />
+          // <Image
+          //   source={image}
+          //   style={styles.loadingFrameImage}
+          //   accessibilityLabel={t(TRANSLATION.ERROR)}
+          //   resizeMode="contain"
+          // />
+          <View style={styles.loadingFrameImage}>
+            <images.error width={100} height={100}/>
+          </View>
         )
       }
     </View>

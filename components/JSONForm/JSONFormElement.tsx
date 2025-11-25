@@ -1,7 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Image,
   ImageBackground,
   LayoutAnimation,
   Platform,
@@ -20,6 +19,7 @@ import { t } from '../../localization';
 import { getPhoneMask } from '../../tools/phoneUtils';
 import { ILanguage } from '../../types/types';
 import Button from '../Button';
+import SmartImage from '../SmartImage';
 import { TFormElement, TFormValues, TOption } from './types';
 import {
   getCalculation,
@@ -357,7 +357,7 @@ function JSONFormElement({
             }}
           >
 
-            <Image 
+            <SmartImage 
                 source={{ uri: file[1].uri }} 
                 style={{ width: '100%', height: '100%' }} 
                 resizeMode="cover"

@@ -341,8 +341,7 @@ const LoginForm: React.FC<IProps> = ({
                 error={errors.password?.message}
                 buttons={[
                   {
-                    // предполагаем, что ваш Input понимает ключ 'image' или 'src'
-                    // если другой — замените на нужный ключ (например src)
+
                     image: isPasswordShows ? images.closedEye : images.openedEye,
                     onPress: () => setIsPasswordShows((p) => !p),
                   },
@@ -419,7 +418,7 @@ const LoginForm: React.FC<IProps> = ({
           <TouchableOpacity onPress={openGoogleAuth} style={styles.workTypeButton}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Image source={images.googleIcon} style={{ width: 20, height: 20, marginRight: 8 }} />
-              <Text>{t(TRANSLATION.SIGN_IN_WITH_GOOGLE) ?? 'Sign in with Google'}</Text>
+              <Text>{t(TRANSLATION.SIGNIN) ?? 'Sign in with Google'}</Text>
             </View>
           </TouchableOpacity>
         )}

@@ -1,4 +1,5 @@
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Record } from 'immutable';
 import SITE_CONSTANTS from '../../defaultValues';
 import { TAction } from '../../types';
@@ -43,10 +44,14 @@ export default function reducer(state = new record(), action: TAction) {
       return state
         .set('status', EStatuses.Fail)
 
+    // case ActionTypes.SET_LANGUAGE:
+    //   console.log('Setting language in reducer:', payload)
+    //   return state
+    //     .set('language', payload)
     case ActionTypes.SET_LANGUAGE:
-      console.log('Setting language in reducer:', payload)
-      return state
-        .set('language', payload)
+      AsyncStorage.setItem('user_lang', JSON.stringify(payload))
+      return state.set('language', payload);
+    
 
     default:
       return state

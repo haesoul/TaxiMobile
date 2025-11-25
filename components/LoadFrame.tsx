@@ -1,5 +1,5 @@
 import React from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import images from '../constants/images'
 import { t, TRANSLATION } from '../localization'
 
@@ -10,13 +10,10 @@ interface IProps {
 const LoadFrame: React.FC<IProps> = ({ title }) => {
   return (
     <View style={styles.loadingFrame}>
-      <Image
-        source={images.fetching}
-        style={styles.loadingFrameImage}
-        resizeMode="contain"
-        accessibilityLabel={t(TRANSLATION.FETCHING)}
-      />
 
+      <View style={styles.loadingFrameImage}>
+        <images.fetching width={90} height={90}/>
+      </View>
       <Text style={[styles.loadingFrameTitle, styles.colored]}>
         {title || t(TRANSLATION.LOADING, { toLower: true })}
       </Text>

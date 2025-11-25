@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   Dimensions,
-  Image,
   Linking,
   StyleSheet,
   Text,
@@ -131,7 +130,7 @@ function MiniOrder({
       : undefined;
 
   const orderIconSource = toImageSource(getOrderIcon(order)) || toImageSource(images.carIcon);
-
+  const OrderIconComponent = orderIconSource as React.FC<{ width?: number; height?: number }>;
   return (
     <TouchableOpacity
       activeOpacity={0.95}
@@ -154,7 +153,7 @@ function MiniOrder({
         </TouchableOpacity>
       )}
 
-      <Image source={toImageSource(images.stars)} style={styles.starsImg} resizeMode="contain" />
+
 
       <Text style={[styles.miniOrderTime, styles.colored]}>
         {order.b_estimate_waiting || 0} {t(TRANSLATION.MINUTES)}
@@ -162,7 +161,11 @@ function MiniOrder({
 
       <View style={styles.miniOrderIcon}>
         {orderIconSource ? (
-          <Image source={orderIconSource as any} style={styles.miniOrderIconImg} resizeMode="contain" />
+          // <Image source={orderIconSource as any} style={styles.miniOrderIconImg} resizeMode="contain" />
+
+          <View style={styles.miniOrderIconImg}>
+            <OrderIconComponent width={70} height={14}/>
+          </View>
         ) : null}
         <Text style={styles.miniOrderIconText}>{getOrderCount(order)}</Text>
       </View>

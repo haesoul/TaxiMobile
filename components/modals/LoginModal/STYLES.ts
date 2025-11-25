@@ -1,5 +1,20 @@
 
-import { StyleSheet, ViewStyle } from 'react-native';
+import { Dimensions, Platform, StyleSheet, ViewStyle } from 'react-native';
+
+const { width } = Dimensions.get('window')
+const MODAL_HORIZONTAL_PADDING = 20
+const MODAL_MAX_WIDTH = Math.min(560, width - MODAL_HORIZONTAL_PADDING * 2)
+
+
+const COLORS = {
+background: '#FFFFFF',
+surface: '#FFFFFF',
+text: '#0F1724',
+subtleText: '#6B7280',
+accent: '#2563EB',
+accentLight: '#E8F0FF',
+danger: '#EF4444',
+}
 
 export default StyleSheet.create({
   modal: {
@@ -12,6 +27,7 @@ export default StyleSheet.create({
 
   overflow: 'hidden',
   backgroundColor: '#FFFFFF',
+  // backgroundColor: 'black',
   borderRadius: 9,
   maxWidth: 900,
   padding: 10,
@@ -21,9 +37,6 @@ export default StyleSheet.create({
   shadowOpacity: 0.04,
   shadowRadius: 12,
   elevation: 10,
-  },
-  loginModal: {
-    maxWidth: 600,
   },
 
   loginModalError: {
@@ -74,24 +87,6 @@ export default StyleSheet.create({
   },
 
 
-  fieldset: {
-    borderRadius: 13,
-    width: '100%',
-
-  },
-  legend: {
-    alignSelf: 'center',
-    paddingHorizontal: 15,
-    fontWeight: '500',
-    fontSize: 22,
-    lineHeight: 26,
-    textAlign: 'center',
-    color: '#A90000',
-  },
-
-  loginSection: {
-    flexDirection: 'column',
-  },
 
   checkboxes: {
     marginBottom: 10,
@@ -122,9 +117,9 @@ export default StyleSheet.create({
   },
 
 
-  loadingFrame: {
-    zIndex: 1,
-  },
+  // loadingFrame: {
+  //   zIndex: 1,
+  // },
   loadingFrameImage: {
     width: 64,
     height: 64,
@@ -229,5 +224,110 @@ export default StyleSheet.create({
 
   sendToWhatsappCheckbox: {
     marginBottom: 40,
+  },
+
+
+
+  subtitle: {
+    fontSize: 13,
+    color: COLORS.subtleText,
+    textAlign: 'center',
+    marginBottom: 8,
+    },
+    
+    
+  loginModal: {
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    alignSelf: 'center',
+    minWidth: 300,
+  
+  ...Platform.select({
+      ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.12,
+      shadowRadius: 20,
+      },
+      android: {
+      elevation: 18,
+      },
+      }),
+      overflow: 'hidden',
+      },
+  loadingFrame: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(255,255,255,0.8)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+  },
+      fieldset: {
+      width: '100%',
+      marginBottom: 10,
+      },
+      legend: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: COLORS.text,
+      textAlign: 'center',
+      marginBottom: 15,
+      },
+      loginSection: {
+      width: '100%',
+      minHeight: 150,
+      maxHeight: '70%',
+      paddingVertical: 5,
+      },
+      tabsWrapper: {
+      marginBottom: 12,
+      },
+      versionInfo: {
+      marginTop: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 6,
+      },
+      inputWrapper: {
+      marginBottom: 12,
+      },
+      primaryButton: {
+      backgroundColor: COLORS.accent,
+      paddingVertical: 12,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      },
+      primaryButtonText: {
+      color: '#fff',
+      fontWeight: '600',
+      fontSize: 15,
+      },
+      linkButton: {
+      paddingVertical: 8,
+      alignItems: 'center',
+      },
+      linkButtonText: {
+      color: COLORS.accent,
+      fontSize: 14,
+      fontWeight: '600',
+      },
+    errorText: {
+      color: COLORS.danger,
+      fontSize: 13,
+      marginTop: 6,
+    },
+  subtleDivider: {
+    height: 1,
+    width: '100%',
+    backgroundColor: '#F3F4F6',
+    marginVertical: 12,
+    borderRadius: 1,
   },
 });

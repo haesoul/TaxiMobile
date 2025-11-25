@@ -7,9 +7,10 @@ interface IProps {
   style?: object
   active?: boolean
   onPress?: () => void
+  src?: any
 }
 
-const Separator: React.FC<IProps> = ({ text, style, active, onPress }) => {
+const Separator: React.FC<IProps> = ({ text, style, active, onPress, src }) => {
   const rotation = useRef(new Animated.Value(active ? 1 : 0)).current
 
   useEffect(() => {

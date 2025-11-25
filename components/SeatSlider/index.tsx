@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react'
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import images from '../../constants/images'
 import { IRootState } from '../../state'
@@ -10,7 +10,7 @@ import {
 
 const mapStateToProps = (state: IRootState) => ({
   maxSeats: clientOrderSelectors.maxAvailableSeats(state),
-  seats: clientOrderSelectors.seats(state),
+  seats: clientOrderSelectors?.seats(state),
 })
 
 const mapDispatchToProps = {
@@ -62,7 +62,9 @@ function SeatSlider({ maxSeats, seats, setSeats }: IProps) {
     <View style={[styles.container, disabled && styles.containerDisabled]}>
       {position > 0 && (
         <TouchableOpacity style={[styles.button, styles.buttonLeft]} onPress={() => scrollToPosition(position - 1)}>
-          <Image source={images.seatSliderArrowRight} style={[styles.arrowIcon, { transform: [{ rotate: '180deg' }] }]} />
+          <View style={[styles.arrowIcon, { transform: [{ rotate: '180deg' }] }]}>
+            <images.seatSliderArrowRight width={16} height={16}/>
+          </View>
         </TouchableOpacity>
       )}
       <FlatList
@@ -76,7 +78,9 @@ function SeatSlider({ maxSeats, seats, setSeats }: IProps) {
       />
       {position + PER_VIEW < items.length && (
         <TouchableOpacity style={[styles.button, styles.buttonRight]} onPress={() => scrollToPosition(position + 1)}>
-          <Image source={images.seatSliderArrowRight} style={styles.arrowIcon} />
+          <View style={[styles.arrowIcon]}>
+            <images.seatSliderArrowRight width={16} height={16}/>
+          </View>
         </TouchableOpacity>
       )}
     </View>

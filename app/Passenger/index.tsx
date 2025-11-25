@@ -1,12 +1,13 @@
+import Map from '@/components/Map/index'
+import MiniOrders from '@/components/MiniOrders'
+import { SwipeView } from '@/components/Swipe'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import * as API from '../../API'
 import Layout from '../../components/Layout'
-import Map from '../../components/Map/index'
-import MiniOrders from '../../components/MiniOrders'
 import PageSection from '../../components/PageSection'
-import { SwipeView } from '../../components/Swipe'
+import VotingForm from '../../components/VotingForm'
 import { IRootState } from '../../state'
 import {
   clientOrderActionCreators,
@@ -18,7 +19,6 @@ import { userSelectors } from '../../state/user'
 import { useInterval } from '../../tools/hooks'
 import { EBookingDriverState, IOrder } from '../../types/types'
 import styles from './STYLES'
-import VotingForm from './VotingForm'
 
 
 const mapStateToProps = (state: IRootState) => ({
@@ -152,7 +152,7 @@ const Passenger: React.FC<IProps> = ({
 
   const prevActiveOrders = useRef<IOrder[]>([])
   useEffect(() => {
-    ;(async () => {
+    (async () => {
       const activeOrdersIds = new Set(activeOrders?.map(order => order.b_id) ?? [])
       for (const order of prevActiveOrders.current) {
         if (activeOrdersIds.has(order.b_id)) continue
@@ -204,37 +204,35 @@ const Passenger: React.FC<IProps> = ({
     <Layout>
       <PageSection scrollable={false} >
 
-        {useMemo(() => (
+
           <MiniOrders
-            // style={styles.passengerMiniOrders}
+
             handleOrderClick={handleOrderClick}
           />
-        ), [handleOrderClick])}
 
-        {useMemo(() => (
+
           <Map
-            // style={styles.passengerFormMapContainer}
+
             setCenter={setMapCenter}
           />
-        ), [setMapCenter])}
 
         <View style={styles.passengerFormPlaceholder} />
-
+        
         <SwipeView swipeHeight={300} speed={250} containerStyle={styles.passengerFormContainer}>
+          {/* <BoundaryButtons /> */}
           <View style={styles.passengerDraggable}>
             <View style={styles.passengerSwipeLine} />
 
-            {useMemo(() => (
-              <VotingForm
-                isExpanded={isExpanded}
-                setIsExpanded={setIsExpanded}
-                syncFrom={setFromAsMapCenter}
-                syncTo={setToAsMapCenter}
-                onSubmit={onSubmit}
-                // minimizedPartRef={minimizedPartRef}
-                // noSwipeElementsRef={formSlidersRef}
-              />
-            ), [isExpanded, setIsExpanded, setFromAsMapCenter, setToAsMapCenter, onSubmit])}
+
+            <VotingForm
+              isExpanded={isExpanded}
+              setIsExpanded={setIsExpanded}
+              syncFrom={setFromAsMapCenter}
+              syncTo={setToAsMapCenter}
+              onSubmit={onSubmit}
+
+            />
+
 
           </View>
         </SwipeView>

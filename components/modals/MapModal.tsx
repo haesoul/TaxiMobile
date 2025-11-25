@@ -29,7 +29,7 @@ const MapModal: React.FC<IProps> = ({
       isOpen={isOpen}
       onClick={() => setMapModal({ ...defaultMapModal })}
     >
-      <Map isOpen={isOpen} isModal />
+      <Map />
     </Overlay>
   )
 }

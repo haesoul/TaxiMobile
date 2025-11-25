@@ -4,15 +4,17 @@ import { ScrollView, StyleSheet, View } from 'react-native'
 interface IProps {
   className?: string
   scrollable?: boolean
+  style?: any
 }
 
 const PageSection: React.FC<React.PropsWithChildren<IProps>> = ({
   children,
   scrollable,
+  style
 }) => {
   if (scrollable === true) {
     return (
-      <ScrollView style={[styles.pageSection, styles.scrollEnabled]}>
+      <ScrollView style={[styles.pageSection, styles.scrollEnabled, style]}>
         {children}
       </ScrollView>
     )

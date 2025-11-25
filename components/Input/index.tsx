@@ -1,6 +1,6 @@
+import images from '@/constants/images'
 import React, { useMemo, useRef, useState } from 'react'
 import {
-  Image,
   Platform,
   ScrollView,
   StyleProp,
@@ -10,15 +10,15 @@ import {
   TextInputProps,
   TouchableOpacity,
   View,
-  ViewStyle,
+  ViewStyle
 } from 'react-native'
-import images from '../../constants/images'
 import { t, TRANSLATION } from '../../localization'
 import { ISelectOption } from '../../types'
 import { ESuggestionType, ISuggestion } from '../../types/types'
 import Button from '../Button'
 import CompareVariants, { ECompareVariants } from '../CompareVariants'
 import RadioCheckbox from '../RadioCheckbox'
+import SmartImage from '../SmartImage'
 
 export enum EInputTypes {
   Default,
@@ -260,12 +260,14 @@ export default function Input({
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 120 }}>
               {defaultFiles.map((df, i) => (
                 <TouchableOpacity key={i} style={styles.fileUploaded} onPress={() => removeDefaultImage && removeDefaultImage(df[0])}>
-                  <Image source={typeof df[1] === 'string' ? { uri: df[1] } : (df[1] as any)} style={styles.fileImage} />
+
+                  <SmartImage source={typeof df[1] === 'string' ? { uri: df[1] } : (df[1] as any)} style={styles.fileImage}/>
                 </TouchableOpacity>
               ))}
               {files.map((file, i) => (
                 <TouchableOpacity key={i} style={styles.fileUploaded} onPress={() => removeImg(file, i)}>
-                  {file.uri ? <Image source={typeof file.uri === 'string' ? { uri: file.uri } : (file.uri as any)} style={styles.fileImage} /> : <View style={styles.filePlaceholder}><Text>{file.name ?? 'file'}</Text></View>}
+                  
+                  {file.uri ? <SmartImage source={typeof file.uri === 'string' ? { uri: file.uri } : (file.uri as any)} style={styles.fileImage}/> : <View style={styles.filePlaceholder}><Text>{file.name ?? 'file'}</Text></View>}
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -275,7 +277,8 @@ export default function Input({
               onPress={() => addFiles()}
               disabled={!onPickFiles}
             >
-              <Image source={images.addPhoto ? (typeof images.addPhoto === 'string' ? { uri: images.addPhoto } : (images.addPhoto as any)) : undefined} style={styles.fileAddImage} />
+
+              <SmartImage source={images.addPhoto ? (typeof images.addPhoto === 'string' ? { uri: images.addPhoto } : (images.addPhoto as any)) : undefined} style={styles.fileAddImage} />
             </TouchableOpacity>
           </View>
         )
@@ -400,9 +403,9 @@ export default function Input({
                       if (React.isValidElement(item)) {
                         return <View key={idx} style={{ marginHorizontal: 5 }}>{item}</View>
                       }
-                      if (typeof item === 'object' && (item as any).image) {
-                        return <Image key={idx} source={(item as any).image} style={styles.buttonImage} />
-                      }
+                      // if (typeof item === 'object' && (item as any).image) {
+                      //   return <Image key={idx} source={(item as any).image} style={styles.buttonImage} />
+                      // }
                       if (typeof item === 'object' && (item as any).buttonProps) {
                         return <Button key={idx} {...(item as any).buttonProps} />
                       }

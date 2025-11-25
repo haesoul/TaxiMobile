@@ -43,7 +43,7 @@ export function parseCarClasses(carClasses: any): Record<number, ICarClass> {
   for (const [id, carClass] of Object.entries(carClasses) as any)
     value[id] = {
       id,
-      seats: parseInt(carClass?.seats),
+      seats: parseInt(carClass?.seats) ?? 1,
       courier_call_rate: parseFloat(carClass.courier_call_rate),
       courier_fare_per_1_km: parseFloat(carClass.courier_fare_per_1_km),
       booking_location_classes: carClass.booking_location_classes,

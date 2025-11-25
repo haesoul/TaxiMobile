@@ -1,6 +1,6 @@
 import moment from 'moment'
 import React, { useMemo, useState } from 'react'
-import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import images from '../../constants/images'
 import { t, TRANSLATION } from '../../localization'
@@ -127,7 +127,10 @@ function PriceInputItem({
         editable={!disabled}
         {...inputProps}
       />
-      <Image source={images.dollarIcon} style={styles.priceInputIcon} />
+
+      <View style={styles.priceInputIcon}>
+        <images.dollarIcon width={16} height={16}/>
+      </View>
     </TouchableOpacity>
   )
 }

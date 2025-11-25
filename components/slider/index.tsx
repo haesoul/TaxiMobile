@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Dimensions,
   FlatList,
-  Image,
   Modal,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import images from '../../constants/images'
 import SITE_CONSTANTS from '../../siteConstants'
 import { modalsActionCreators } from '../../state/modals'
 import { EFileType, IFile } from '../../types/types'
+import SmartImage from '../SmartImage'
 
 
 
@@ -95,7 +95,7 @@ const Slider: React.FC<IProps> = ({
       return (
         <View style={[styles.glideSlide, styles.glideSlideFile]} key={`file-${index}`}>
           <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-            <Image
+            <SmartImage
               source={{ uri: file.src }}
               style={{ width: Math.min(300, SCREEN_WIDTH * 0.9), height: 250, resizeMode: 'contain' }}
             />
@@ -138,7 +138,10 @@ const Slider: React.FC<IProps> = ({
           style={styles.sliderDelete}
           onPress={() => setDeleteFilesModal({ isOpen: true })}
         >
-          <Image source={images.trash} style={{ width: 24, height: 24 }} />
+
+          <View style={{ width: 24, height: 24 }}>
+            <images.trash width={24} height={24}/>
+          </View>
         </TouchableOpacity>
       )}
 
@@ -146,7 +149,7 @@ const Slider: React.FC<IProps> = ({
         <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
           {fullScreenIndex !== null && files[fullScreenIndex] && files[fullScreenIndex].type === EFileType.Image && (
             <TouchableOpacity style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }} onPress={() => setFullScreenIndex(null)}>
-              <Image source={{ uri: files[fullScreenIndex].src }} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
+              <SmartImage source={{ uri: files[fullScreenIndex].src }} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
             </TouchableOpacity>
           )}
 
@@ -181,7 +184,10 @@ const Slider: React.FC<IProps> = ({
       <View style={styles.glideArrowLeft} pointerEvents="box-none">
         <TouchableOpacity onPress={onPrev} disabled={!controls || currentIndex === 0}>
           {controls && currentIndex !== 0 && (
-            <Image source={images.sliderArrow} style={{ width: 24, height: 24 }} />
+            // <Image source={images.sliderArrow} style={{ width: 24, height: 24 }} />
+            <View style={{ width: 24, height: 24 }}>
+              <images.sliderArrow width={24} height={24}/>
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -202,7 +208,10 @@ const Slider: React.FC<IProps> = ({
       <View style={styles.glideArrowRight} pointerEvents="box-none">
         <TouchableOpacity onPress={onNext} disabled={!controls || currentIndex === total - 1}>
           {controls && currentIndex !== total - 1 && (
-            <Image source={images.sliderArrow} style={{ width: 24, height: 24, transform: [{ rotate: '180deg' }] }} />
+            // <Image source={images.sliderArrow} style={{ width: 24, height: 24, transform: [{ rotate: '180deg' }] }} />
+            <View style={{ width: 24, height: 24, transform: [{ rotate: '180deg' }] }}>
+              <images.sliderArrow width={24} height={24}/>
+            </View>
           )}
         </TouchableOpacity>
       </View>

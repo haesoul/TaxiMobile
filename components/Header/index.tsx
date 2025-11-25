@@ -1,8 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native'
 import moment from 'moment'
-import React, { useEffect, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import {
-  Image,
   Platform,
   ScrollView,
   StyleProp,
@@ -10,7 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ViewStyle,
+  ViewStyle
 } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import config from '../../config'
@@ -20,8 +19,8 @@ import { useInterval } from '../../tools/hooks'
 import { EBookingDriverState, EUserRoles, ILanguage } from '../../types/types'
 // import { setCookie } from '../../utils/cookies'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { ImageSourcePropType } from 'react-native'
-import { t } from '../../localization'
+import { SvgProps } from 'react-native-svg'
+import { t, TRANSLATION } from '../../localization'
 import store, { IRootState } from '../../state'
 import { clientOrderSelectors } from '../../state/clientOrder'
 import { configActionCreators, configSelectors } from '../../state/config'
@@ -32,7 +31,7 @@ import { Burger } from '../Burger/Burger'
 
 
 
-const FLAGS_IMAGES: Record<string, ImageSourcePropType> = {
+const FLAGS_IMAGES: Record<string, FC<SvgProps>> = {
   ru: images.flagRu,
   gb: images.flagGb,
   fr: images.flagFr,
@@ -104,7 +103,7 @@ function Header({
   })
 
   menuItems.push({
-    label: t('language'),
+    label: t(TRANSLATION.EDIT_LANGS_PAGE_TITLE),
     type: 'language',
     action: () => {
       setLanguagesOpened(prev => !prev)
@@ -166,7 +165,9 @@ function Header({
 
   const handleLanguageChange = async (lang: ILanguage) => {
     // setCookie('user_lang', lang.iso)
-    await AsyncStorage.setItem('user_lang', lang.iso)
+    // await AsyncStorage.setItem('user_lang', lang.iso)
+    await AsyncStorage.setItem("user_lang", JSON.stringify(lang.iso));
+
     setLanguage(lang)
     setLanguagesOpened(false)
     setMenuOpened(false)
@@ -204,25 +205,17 @@ function Header({
                       }}
                       style={styles.languageFlag}
                     >
-                      {lang.logo in FLAGS_IMAGES && (
-                        // <Image
-                        //   source={
-                        //     FLAGS_IMAGES[lang.logo]
-                        //       ? 
-                        //         { uri: FLAGS_IMAGES[lang.logo] }
-                        //       : 
-                        //         FLAGS_IMAGES[lang.logo] as any
-                        //   }
-                        //   style={styles.languageFlagIcon}
-                        //   resizeMode="cover"
-                        // />
-                        <Image
-                          source={FLAGS_IMAGES[lang.logo]}
-                          style={styles.languageFlagIcon}
-                          resizeMode="cover"
-                        />
 
-                      )}
+                    {lang.logo in FLAGS_IMAGES && (() => {
+                      const Flag: FC<SvgProps> = FLAGS_IMAGES[lang.logo];
+                      return (
+                        <View style={styles.languageFlagIcon}>
+                          <Flag width={24} height={16} />
+                        </View>
+                      )
+                    })()}
+
+
                       <Text style={styles.languageFlagText}>{lang.native}</Text>
                     </TouchableOpacity>
                   ))}
@@ -241,11 +234,10 @@ function Header({
         <View style={styles.column}>
           {detailedOrderID ? (
             <TouchableOpacity onPress={onReturn} style={styles.menuIconWrapper}>
-              <Image
-                source={images.returnIcon ? { uri: images.returnIcon } : (images.returnIcon as any)}
-                style={styles.menuIcon}
-                resizeMode="contain"
-              />
+
+              <View style={styles.menuIcon}> 
+                <images.returnIcon width={28} height={28}/>
+              </View>
             </TouchableOpacity>
           ) : (
             <View style={styles.menuWrapper}>
@@ -257,17 +249,18 @@ function Header({
 
         {user?.u_role === EUserRoles.Client && (
           <TouchableOpacity style={styles.voteButton} activeOpacity={0.8}>
-            <Image
-              source={images.handUp ? { uri: images.handUp } : (images.handUp as any)}
-              style={styles.voteIcon}
-              resizeMode="contain"
-            />
+            <View style={styles.voteIcon}>
+              <images.handUp width={18} height={18} />
+            </View>
           </TouchableOpacity>
         )}
       </View>
 
       <View style={styles.headerLogo}>
-        <Image source={images.logo ? { uri: images.logo } : (images.logo as any)} style={styles.logoImg} resizeMode="contain" />
+        {/* <Image source={images.logo} style={styles.logoImg} resizeMode="contain" /> */}
+        <View style={styles.logoImg}>
+          <images.logo width={60} height={32} />
+        </View>
       </View>
 
       <View style={styles.headerAvatarWrapper}>
@@ -283,11 +276,10 @@ function Header({
           style={styles.avatarTouchable}
           activeOpacity={0.8}
         >
-          <Image
-            source={avatar ? { uri: avatar } : (avatar as any)}
-            style={[styles.avatar, avatarResizeMode === 'cover' ? styles.avatarCover : undefined]}
-            resizeMode={avatarResizeMode}
-          />
+
+          <View style={[styles.avatar, avatarResizeMode === 'cover' ? styles.avatarCover : undefined]}>
+            <images.avatar width={60} height={32} />
+          </View>
         </TouchableOpacity>
       </View>
     </View>

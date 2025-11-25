@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { GestureResponderEvent, Image, ImageSourcePropType, Pressable, StyleSheet, Text } from 'react-native'
+import { GestureResponderEvent, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import images from '../../constants/images'
 import { IRootState } from '../../state'
@@ -70,7 +70,16 @@ const Toggler: React.FC<IProps> = ({
           pressed && styles.togglerActive
         ]}
       >
-        {small ? <Image source={imageSource} style={styles.image}/> : <Text style={styles.togglerText}>✎</Text>}
+        {/* {small ? <Image source={imageSource} style={styles.image}/> : <Text style={styles.togglerText}>✎</Text>} */}
+        <View style={styles.image}>
+          {
+            small ? 
+              <images.chat width={16} height={16}/>
+              :
+              <Text style={styles.togglerText}>✎</Text>
+          }
+          
+        </View>
       </Pressable>
 
   )

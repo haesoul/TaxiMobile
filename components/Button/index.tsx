@@ -1,14 +1,13 @@
 import React, { ReactElement, useCallback, useMemo } from 'react'
 import {
   GestureResponderEvent,
-  Image,
   ImageProps,
   StyleSheet,
   Text,
   TouchableOpacity,
   TouchableOpacityProps,
   View,
-  ViewProps,
+  ViewProps
 } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import { IRootState } from '../../state'
@@ -17,6 +16,7 @@ import { userSelectors } from '../../state/user'
 import { gradient } from '../../tools/theme'
 import { getStatusClassName } from '../../tools/utils'
 import { EColorTypes, EStatuses } from '../../types/types'
+import SmartImage from '../SmartImage'
 
 
 const mapStateToProps = (state: IRootState) => ({
@@ -41,7 +41,7 @@ export enum EButtonStyles {
 
 interface IProps extends Omit<TouchableOpacityProps, 'style' | 'onPress'>, ConnectedProps<typeof connector> {
   wrapperProps?: ViewProps,
-  imageProps?: Omit<ImageProps, 'source'> & { source: ImageProps['source'] },
+  imageProps?: Omit<ImageProps, 'source'> & { source: any },
   fixedSize?: boolean,
   shape?: EButtonShapes,
   buttonStyle?: any,
@@ -139,7 +139,7 @@ function Button({
         {...restProps}
       >
         {imageProps && imageProps.source && (
-          <Image
+          <SmartImage
             alt={text}
             {...imageProps}
             style={imageProps.style ? [styles.button__icon, imageProps.style] : styles.button__icon}

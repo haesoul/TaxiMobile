@@ -29,6 +29,7 @@ const VersionInfo: React.FC<IProps> = ({ setLanguage }) => {
   const saveLang = async (value: string) => {
     try {
       await AsyncStorage.setItem('user_lang', value)
+
     } catch (e) {
       console.log('AsyncStorage set error', e)
     }
@@ -59,9 +60,9 @@ const VersionInfo: React.FC<IProps> = ({ setLanguage }) => {
           iso: lang.iso,
           logo: lang.logo,
           native: lang.native,
-          ru: lang.ru,
-          en: lang.en,
-          es: lang.es,
+          ru: lang.ru ?? '',
+          en: lang.en ?? '',
+          es: lang.es ?? '',
           tr_code: lang.iso
         }
 

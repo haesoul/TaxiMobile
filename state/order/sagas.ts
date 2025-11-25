@@ -1,8 +1,8 @@
-import { all, takeEvery, put } from 'redux-saga/effects'
-import { TAction } from '../../types'
-import { call } from '../../tools/sagaUtils'
-import { updateCompletedOrderDuration } from '../../tools/order'
+import { all, put, takeEvery } from 'redux-saga/effects'
 import * as API from '../../API'
+import { updateCompletedOrderDuration } from '../../tools/order'
+import { call } from '../../tools/sagaUtils'
+import { TAction } from '../../types'
 import { ActionTypes } from './constants'
 
 export const saga = function* () {

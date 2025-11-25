@@ -9,7 +9,7 @@ import Icon from '../Icon';
 
 const mapStateToProps = (state: IRootState) => ({
   time: clientOrderSelectors.time(state),
-  seats: clientOrderSelectors?.seats(state),
+  seats: clientOrderSelectors?.seats(state) ?? 1,
   carClass: clientOrderSelectors.carClass(state),
   customerPrice: clientOrderSelectors.customerPrice(state),
   phone: clientOrderSelectors.phone(state),

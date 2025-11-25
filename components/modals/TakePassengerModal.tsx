@@ -1,3 +1,4 @@
+import * as Location from 'expo-location'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { ScrollView, Text, View } from 'react-native'
@@ -15,6 +16,8 @@ import Button from '../Button'
 import Input, { EInputTypes } from '../Input'
 import Overlay from './Overlay'
 import { styles } from './STYLES'
+
+
 
 const mapStateToProps = (state: IRootState) => ({
   isOpen: modalsSelectors.isTakePassengerModalOpen(state),
@@ -88,17 +91,27 @@ const TakePassengerModal: React.FC<IProps> = ({
       })
   }
 
-  // геолокация
+
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) =>
-        updateTakePassengerModal({
-          from: { latitude: coords.latitude, longitude: coords.longitude },
-        }),
-      error => console.error(error),
-      { enableHighAccuracy: true },
-    )
-  }, [])
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.error('Permission denied');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+  
+      updateTakePassengerModal({
+        from: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+      });
+    })();
+  }, []);
 
   useEffect(() => {
     debouncedGetFromPointSuggestion(setFromSuggestions, from?.address, true)

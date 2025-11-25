@@ -1,5 +1,5 @@
 import React from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import images from '../../constants/images'
 import { t, TRANSLATION } from '../../localization'
 import { IOrder, IUser } from '../../types/types'
@@ -34,10 +34,10 @@ const ClientInfo: React.FC<IProps> = ({
   return (
     <View style={styles.orderPassengerInfo}>
       <View style={styles.orderPassengerInfoInner}>
-        <Image
-          source={images.passengerAvatar}
-          style={styles.avatar}
-        />
+
+        <View style={styles.avatar}>
+          <images.passengerAvatar width={40} height={40}/>
+        </View>
 
         <View>
           <Text style={styles.colored}>
@@ -45,10 +45,10 @@ const ClientInfo: React.FC<IProps> = ({
           </Text>
 
           <View>
-            <Image
-              source={images.stars}
-              style={styles.stars}
-            />
+
+            <View style={styles.stars}>
+              <images.stars width={80} height={16}/>
+            </View>
           </View>
         </View>
       </View>

@@ -1,22 +1,24 @@
-import React from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import React from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 interface IProps {
-  title: string
-  value: string | React.ReactNode
-  image: any
-  alt: string
+  title: string;
+  value: string | React.ReactNode;
+  image: any; 
+  alt: string;
 }
 
-const OrderField: React.FC<IProps> = ({ title, value, image, alt }) => {
+const OrderField: React.FC<IProps> = ({ title, value, image: Img, alt }) => {
+  const isSvg = typeof Img === "function";
+
   return (
     <View>
       <View style={styles.orderFields}>
-        <Image
-          source={image}
-          style={styles.image}
-          accessibilityLabel={alt}
-        />
+        {isSvg ? (
+          <Img width={24} height={24} />
+        ) : (
+          <Image source={Img} accessibilityLabel={alt} style={{ width: 24, height: 24 }} />
+        )}
 
         <View style={styles.labelContainer}>
           <Text style={styles.colored}>
@@ -27,8 +29,9 @@ const OrderField: React.FC<IProps> = ({ title, value, image, alt }) => {
 
       <View style={styles.orderSeparator} />
     </View>
-  )
-}
+  );
+};
+
 
 export default OrderField
 

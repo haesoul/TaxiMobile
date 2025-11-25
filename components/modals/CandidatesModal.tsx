@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import * as API from '../../API'
 import images from '../../constants/images'
@@ -97,10 +97,10 @@ const CandidatesModal: React.FC<IProps> = ({
                   <TouchableOpacity onPress={() => handleCandidateClick(item.u_id)}>
                     <View style={styles.candidatesModalCandidateHeader}>
                       <View style={styles.candidatesModalCandidateHeaderAvatar}>
-                        <Image
-                          source={images.driverAvatar}
-                          style={styles.candidatesModalCandidateHeaderAvatarImg}
-                        />
+
+                        <View style={styles.candidatesModalCandidateHeaderAvatarImg}>
+                          <images.driverAvatar width={60} height={60}/>
+                        </View>
                       </View>
                       <View style={styles.candidatesModalCandidateHeaderInfo}>
                         <Text style={styles.candidatesModalCandidateHeaderName}>
@@ -143,28 +143,37 @@ const CandidatesModal: React.FC<IProps> = ({
                     {/*item.u_replies?*/([] as IReply[]).map(reply => (
                       <View key={reply.date.toString()} style={styles.candidatesModalCandidateReply}>
                         <View style={styles.candidatesModalCandidateReplyRow}>
-                          <Image source={images.timer} style={styles.candidatesModalCandidateReplyIconImg} />
+
+                          <View style={styles.candidatesModalCandidateReplyIconImg}>
+                            <images.timer width={30} height={30}/>
+                          </View>
                           <Text>
                             <Text style={{ fontWeight: 'bold' }}>{t(TRANSLATION.DATE_P)}: </Text>
                             {reply.date.format(dateFormatDate)}
                           </Text>
                         </View>
                         <View style={styles.candidatesModalCandidateReplyRow}>
-                          <Image source={images.uGroup} style={styles.candidatesModalCandidateReplyIconImg} />
+                          <View style={styles.candidatesModalCandidateReplyIconImg}>
+                            <images.uGroup width={30} height={30}/>
+                          </View>
                           <Text>
                             <Text style={{ fontWeight: 'bold' }}>{t(TRANSLATION.CUSTOMER)}: </Text>
                             {reply.customerName}
                           </Text>
                         </View>
                         <View style={styles.candidatesModalCandidateReplyRow}>
-                          <Image source={images.cash} style={styles.candidatesModalCandidateReplyIconImg} />
+                          <View style={styles.candidatesModalCandidateReplyIconImg}>
+                            <images.cash width={30} height={30}/>
+                          </View>
                           <Text>
                             <Text style={{ fontWeight: 'bold' }}>{t(TRANSLATION.COST)}: </Text>
                             {reply.payment}
                           </Text>
                         </View>
                         <View style={styles.candidatesModalCandidateReplyRow}>
-                          <Image source={images.chatIconBr} style={styles.candidatesModalCandidateReplyIconImg} />
+                          <View style={styles.candidatesModalCandidateReplyIconImg}>
+                            <images.chatIconBr width={30} height={30}/>
+                          </View>
                           <Text>
                             <Text style={{ fontWeight: 'bold' }}>{t(TRANSLATION.COMMENT2)}: </Text>
                             {reply.content}

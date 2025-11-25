@@ -57,7 +57,6 @@ function* loginSaga(data: TAction) {
 
     if (result.user === null) throw new Error('wrong login response')
 
-    // await AsyncStorage.setItem('state.user.tokens', JSON.stringify(result.tokens))
 
     yield call(setItem, 'state.user.tokens', JSON.stringify(result.tokens))
 
@@ -91,7 +90,6 @@ function* googleLoginSaga(data: TAction) {
 
     if (!result) throw new Error('Wrong login response')
     console.log('GFP-POINT-01: Saving tokens from goole auth to localStorage', result)
-    // await AsyncStorage.setItem('state.user.tokens', JSON.stringify(result.tokens))
 
     yield call(setItem, 'state.user.tokens', JSON.stringify(result.tokens))
 
@@ -129,7 +127,6 @@ function* registerSaga(data: TAction) {
       token: response.token,
       u_hash: response.u_hash,
     }
-    // await AsyncStorage.setItem('state.user.tokens', JSON.stringify(tokens))
 
     yield call(setItem, 'state.user.tokens', JSON.stringify(tokens))
 
@@ -169,8 +166,7 @@ function* registerSaga(data: TAction) {
 function* logoutSaga() {
   yield put({ type: ActionTypes.LOGOUT_START })
   try {
-    // await AsyncStorage.removeItem('state.user.user')
-    // await AsyncStorage.removeItem('state.user.tokens')
+
 
     yield call(removeItem, 'state.user.user')
     yield call(removeItem, 'state.user.tokens')
@@ -196,17 +192,16 @@ function* remindPasswordSaga(data: TAction) {
 
 function* initUserSaga() {
   try {
-    // const rawTokens = await AsyncStorage.getItem('state.user.tokens')
     const rawTokens: string = yield call(getItem, 'state.user.tokens')
     const tokens: ITokens = rawTokens !== null ? JSON.parse(rawTokens) : {}
     if (!tokens.token || !tokens.u_hash) {
-      // Проверяем язык в куках
-      // const savedLang = getItem('user_lang')
 
-      const savedLang: string = yield call(getItem, 'user_lang')
 
-      if (savedLang) {
-        const language = SITE_CONSTANTS.LANGUAGES?.find((i: any) => i.iso === savedLang)
+      const savedLangString: string = yield call(getItem, 'user_lang')
+      if (savedLangString) {
+        const savedLang = JSON.parse(savedLangString)
+        const language = SITE_CONSTANTS.LANGUAGES?.find((i: any) => i.iso === savedLang.iso)
+      
         if (language) {
           yield put({
             type: ConfigActionTypes.SET_LANGUAGE,
@@ -220,7 +215,7 @@ function* initUserSaga() {
 
     const user = yield* call(API.getAuthorizedUser)
     if (!user) {
-      // await AsyncStorage.removeItem('state.user.tokens')
+
       yield call(removeItem, 'state.user.tokens')
 
       return
@@ -231,9 +226,9 @@ function* initUserSaga() {
         return i.id.toString() === user.u_lang?.toString()
       })
       if (language) {
-        // await setItem('user_lang', language.iso)
 
-        yield call(setItem, 'user_lang', language.iso)
+
+        yield call(setItem, 'user_lang', JSON.stringify(language))
 
         yield put({
           type: ConfigActionTypes.SET_LANGUAGE,
@@ -241,13 +236,15 @@ function* initUserSaga() {
         })
       }
     } else {
-      // const savedLang = getItem('user_lang')
 
-      const savedLang: string = yield call(getItem, 'user_lang')
 
-      if (savedLang) {
-        const language = SITE_CONSTANTS.LANGUAGES?.find((i: any) => i.iso === savedLang)
-        console.log('Found language from cookie:', language)
+      const savedLangString: string = yield call(getItem, 'user_lang')
+
+      if (savedLangString) {
+        const savedLang = JSON.parse(savedLangString)
+        const language = SITE_CONSTANTS.LANGUAGES?.find((i: any) => i.iso === savedLang.iso)
+
+
         if (language) {
           yield put({
             type: ConfigActionTypes.SET_LANGUAGE,
@@ -259,7 +256,7 @@ function* initUserSaga() {
     yield put(setUser(user))
   } catch (error) {
     console.error('Error in initUserSaga:', error)
-    // await AsyncStorage.removeItem('state.user.tokens')
+   
     yield call(removeItem, 'state.user.tokens')
   }
 }

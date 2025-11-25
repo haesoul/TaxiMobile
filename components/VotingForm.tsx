@@ -1,30 +1,30 @@
 import moment from 'moment'
 import React, { useCallback, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Image, Text, TouchableOpacity, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 import { connect, ConnectedProps, useStore } from 'react-redux'
-import * as API from '../../API'
-import Button, { EButtonStyles } from '../../components/Button'
-import CarClassSlider from '../../components/CarClassSlider'
-import Icon from '../../components/Icon'
-import Input, { EInputStyles, EInputTypes } from '../../components/Input'
-import LocationInput from '../../components/LocationInput'
-import PriceInput from '../../components/PriceInput'
-import SeatSlider from '../../components/SeatSlider'
-import ShortInfo from '../../components/ShortInfo'
-import images from '../../constants/images'
-import { t, TRANSLATION } from '../../localization'
-import SITE_CONSTANTS from '../../siteConstants'
-import { IRootState } from '../../state'
+// import * as API from '../../API'
+import * as API from '../API'
+import styles from '../app/Passenger/STYLES'
+import images from '../constants/images'
+import { t, TRANSLATION } from '../localization'
+import SITE_CONSTANTS from '../siteConstants'
+import { IRootState } from '../state'
 import {
   clientOrderActionCreators,
   clientOrderSelectors,
-} from '../../state/clientOrder'
-import { modalsActionCreators } from '../../state/modals'
-import { ordersActionCreators, ordersSelectors } from '../../state/orders'
-import { userSelectors } from '../../state/user'
-import { getPhoneNumberError } from '../../tools/utils'
-import { EPaymentWays, EPointType, IOptions } from '../../types/types'
-import styles from './STYLES'
+} from '../state/clientOrder'
+import { modalsActionCreators } from '../state/modals'
+import { ordersActionCreators, ordersSelectors } from '../state/orders'
+import { userSelectors } from '../state/user'
+import { getPhoneNumberError } from '../tools/utils'
+import { EPaymentWays, EPointType, IOptions } from '../types/types'
+import Button, { EButtonStyles } from './Button'
+import CarClassSlider from './CarClassSlider'
+import Icon from './Icon'
+import Input, { EInputStyles, EInputTypes } from './Input'
+import LocationInput from './LocationInput'
+import PriceInput from './PriceInput'
+import SeatSlider from './SeatSlider'
 
 const mapStateToProps = (state: IRootState) => ({
   activeOrders: ordersSelectors.activeOrders(state),
@@ -91,7 +91,7 @@ const VotingForm: React.FC<IProps> = ({
     seatSliderRef.current,
   ].filter(Boolean), [])
 
-  const available = useMemo(() => !activeOrders?.some(order => order.b_voting), [activeOrders])
+  const available = useMemo(() => !activeOrders?.some((order: any) => order.b_voting), [activeOrders])
 
   const [fromError, setFromError] = useState<string | null>(null)
   useLayoutEffect(() => { setFromError(null) }, [from])
@@ -109,7 +109,7 @@ const VotingForm: React.FC<IProps> = ({
 
     const state = store.getState()
     const carClass = clientOrderSelectors.carClass(state)
-    const seats = clientOrderSelectors?.seats(state)
+    const seats = clientOrderSelectors?.seats(state) ?? 1
 
     let error = false
     if (!from?.address) {
@@ -170,22 +170,26 @@ const VotingForm: React.FC<IProps> = ({
       resetClientOrder()
       getActiveOrders()
       onSubmit(data)
-    } catch (error) {
-      setSubmitError((error as any)?.message?.toString() || t(TRANSLATION.ERROR))
-      // eslint-disable-next-line no-console
-      console.error(error)
+    } catch (err: unknown) {
+      const error = err as any;
+
+
+
+      if (error?.response?.status === 401) {
+        setLoginModal(true);
+      }
     }
     setSubmitting(false)
   }, [from, to, comments, time, phone, user, store, setLoginModal, getActiveOrders, setIsExpanded, onSubmit, resetClientOrder])
 
   const submitButtons = (
     <View style={styles.passengerVotingFormOrderButtonWrapper}>
-      {useMemo(() => (
+
         <>
           <View style={styles.passengerVotingFormOrderButton}>
             <Button
               buttonStyle={EButtonStyles.RedDesign as any}
-              text={t(TRANSLATION.VOTE, { toUpper: false })}
+              text={`${t(TRANSLATION.VOTE, { toUpper: false })}s`}
               onPress={() => submit(true)}
               disabled={!available || submitting}
             />
@@ -194,13 +198,13 @@ const VotingForm: React.FC<IProps> = ({
           <View style={styles.passengerVotingFormOrderButton}>
             <Button
               buttonStyle={EButtonStyles.RedDesign as any}
-              text={t(TRANSLATION.TO_ORDER, { toUpper: false })}
+              text={`${t(TRANSLATION.TO_ORDER, { toUpper: false })}s`}
               onPress={() => submit()}
               disabled={!available || submitting}
             />
           </View>
         </>
-      ), [available, submitting, submit])}
+
 
       {submitError ? (
         <Text style={styles.passengerVotingFormOrderButtonError}>{submitError}</Text>
@@ -216,41 +220,36 @@ const VotingForm: React.FC<IProps> = ({
         style={styles.passengerVotingFormGroup}
       >
         <View style={styles.passengerVotingFormLocationWrapper}>
-          {useMemo(() => (
+
             <LocationInput
-              // style={styles.passengerVotingFormLocationWrapper}
+
               type={EPointType.From}
               onOpenMap={syncFrom}
               error={fromError ?? undefined}
             />
-          ), [syncFrom, fromError])}
 
-          {useMemo(() => (
             <LocationInput
-              // style={styles.passengerVotingFormLocationWrapper}
+
               type={EPointType.To}
               onOpenMap={syncTo}
               error={toError ?? undefined}
             />
-          ), [syncTo, toError])}
+
         </View>
 
-        {useMemo(() => !isExpanded && <ShortInfo />, [isExpanded])}
 
         {!isExpanded && submitButtons}
       </View>
-
+      <SeatSlider />
       <View style={styles.passengerVotingFormSeatsAndTime}>
-        {useMemo(() => (
+
           <View style={styles.passengerVotingFormSeats}>
             <Text style={styles.passengerVotingFormSeatsTitle}>{t(TRANSLATION.SEATS)}</Text>
             <View ref={seatSliderRef}>
               <SeatSlider />
             </View>
           </View>
-        ), [])}
 
-        {useMemo(() => (
           <View style={styles.passengerVotingFormTime}>
             <View style={styles.passengerVotingFormTimeWrapper}>
               <Text style={styles.passengerVotingFormTimeTitle}>{t(TRANSLATION.START_TIME)}</Text>
@@ -263,22 +262,21 @@ const VotingForm: React.FC<IProps> = ({
               <Icon src="alarm" style={styles.passengerVotingFormTimeIcon} />
             </TouchableOpacity>
           </View>
-        ), [time, setPickTimeModal])}
+
       </View>
 
-      {useMemo(() => (
         <View style={styles.passengerVotingFormCarClass}>
           <View style={styles.passengerVotingFormCarClassHeader}>
             <Text style={styles.passengerVotingFormCarClassTitle}>{t(TRANSLATION.AUTO_CLASS)}</Text>
 
             <View style={styles.passengerVotingFormCarNearbyInfo}>
               <Icon src="carNearby" style={styles.passengerVotingFormCarNearbyIcon} />
-              <Text style={styles.passengerVotingFormCarNearbyInfoText}>{7} автомобилей рядом</Text>
+              <Text style={styles.passengerVotingFormCarNearbyInfoText}></Text>
             </View>
 
             <View style={styles.passengerVotingFormCarNearbyInfo}>
               <Icon src="timeWait" style={styles.passengerVotingFormWaitingTimeIcon} />
-              <Text style={styles.passengerVotingFormCarNearbyInfoText}>~{5} минут</Text>
+              <Text style={styles.passengerVotingFormCarNearbyInfoText}></Text>
             </View>
           </View>
 
@@ -286,9 +284,7 @@ const VotingForm: React.FC<IProps> = ({
             <CarClassSlider />
           </View>
         </View>
-      ), [])}
 
-      {useMemo(() => (
         <View style={styles.passengerVotingFormComments}>
           <View style={styles.passengerVotingFormCommentsWrapper}>
             <Text style={styles.passengerVotingFormCommentsTitle}>{t(TRANSLATION.COMMENT)}</Text>
@@ -298,21 +294,20 @@ const VotingForm: React.FC<IProps> = ({
           </View>
 
           <TouchableOpacity style={styles.passengerVotingFormCommentsBtn} onPress={() => setCommentsModal(true)}>
-            <Image source={images.seatSliderArrowRight as any} style={{ width: 16, height: 16 }} />
+
+            <images.seatSliderArrowRight width={16} height={16}/>
           </TouchableOpacity>
         </View>
-      ), [comments, setCommentsModal])}
 
-      {useMemo(() => (
         <Input
           fieldWrapperStyle={styles.passengerVotingFormLocationWrapper}
-          // value={phone ?? ''}
+
           inputProps={{
             value: (phone ?? '').toString(),
           }}
           inputType={EInputTypes.MaskedPhone}
           style={EInputStyles.RedDesign as any}
-          // buttons={user?.u_phone ? [{ image: images.checkMarkRed, onClick() { setPhone(+user!.u_phone!) } }] : []}
+
           buttons={
             user?.u_phone
               ? [
@@ -329,13 +324,11 @@ const VotingForm: React.FC<IProps> = ({
           error={phoneError ?? undefined}
           onChange={(val: any) => setPhone(val)}
         />
-      ), [phone, setPhone, user, phoneError])}
 
-      {useMemo(() => SITE_CONSTANTS.ENABLE_CUSTOMER_PRICE ? (
         <View style={styles.passengerVotingFormLocationWrapper}>
           <PriceInput />
         </View>
-      ) : null, [])}
+
 
       {isExpanded && submitButtons}
 

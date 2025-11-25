@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Image, ScrollView, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import * as API from '../../API'
 import images from '../../constants/images'
@@ -70,7 +70,10 @@ const DriverModal: React.FC<IProps> = ({
 
           <View style={styles.driverInfo}>
             <View style={styles.driverInfoDivChild}>
-              <Image source={images.solidCar} style={styles.driverInfoImg} />
+
+              <View style={styles.driverInfoImg} >
+                <images.solidCar />
+              </View>
               <Text style={styles.driverInfoDivChildSpan}>
                 {!!car?.cm_id && t(TRANSLATION.CAR_MODELS[car.cm_id])}
               </Text>
@@ -78,14 +81,16 @@ const DriverModal: React.FC<IProps> = ({
                 {!!car?.color && t(TRANSLATION.CAR_COLORS[car.color])}
               </Text>
             </View>
-
-            <View style={styles.driverInfoDivChild}>
-              <Image source={images.driverAvatar} style={styles.driverInfoImg} />
-              <Image source={images.stars} style={styles.driverInfoImg} />
+            <View style={styles.driverInfoImg} >
+                <images.driverAvatar />
+                <images.stars />
             </View>
 
+
             <View style={styles.driverInfoDivChild}>
-              <Image source={images.subwayIdCard} style={styles.driverInfoImg} />
+              <View style={styles.driverInfoImg} >
+                <images.subwayIdCard />
+              </View>
               <Text style={[styles.driverInfoDivChildSpan, styles.driverModalRegistrationPlate]}>
                 {registrationPlate?.[0]}
               </Text>

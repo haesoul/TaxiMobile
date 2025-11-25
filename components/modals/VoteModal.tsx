@@ -1,6 +1,6 @@
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import * as API from '../../API';
 import images from '../../constants/images';
@@ -104,11 +104,10 @@ const VoteModal: React.FC<IProps> = ({
         <View style={styles.voteModalVoteBlock}>
 
           {/* Timer Image */}
-          <Image
-            source={images.timer}
-            style={styles.voteModalVoteBlockTimerImg}
-            resizeMode="contain"
-          />
+
+          <View style={styles.voteModalVoteBlockTimerImg}>
+            <images.timer />
+          </View>
 
           {/* Seconds */}
           <View style={styles.voteModalVoteBlockArticle}>

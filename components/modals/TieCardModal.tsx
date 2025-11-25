@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import images from '../../constants/images';
 import { t, TRANSLATION } from '../../localization';
@@ -37,11 +37,10 @@ const TieCardModal: React.FC<IProps> = ({
           <Text>{t(TRANSLATION.TIE_CARD_HEADER)}</Text>
 
           <View style={styles.tieCardModalInfoBlock}>
-            <Image
-              source={images.cardIcon}
-              style={styles.tieCardModalIcon}
-              resizeMode="contain"
-            />
+
+            <View style={styles.tieCardModalIcon}>
+              <images.cardIcon width={60} height={60}/>
+            </View>
 
             <Text style={styles.tieCardModalInfoBlockArticle}>
               {t(TRANSLATION.TIE_CARD_ARTICLE)}

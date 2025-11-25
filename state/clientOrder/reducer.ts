@@ -131,14 +131,14 @@ export default function reducer(
 
   if (type === ActionTypes.SET_SEATS) {
     const seats = Math.min(payload, maxAvailableSeats(state))
+    const currentCarClassData = SITE_CONSTANTS.CAR_CLASSES[state.carClass] ?? { seats: 1 };
     state = state
       .set('seats', seats)
     state = reducer(state, {
       type: ActionTypes.SET_CAR_CLASS,
-      payload: SITE_CONSTANTS.CAR_CLASSES[state.carClass].seats < seats ?
-        availableCarClasses(state)?.find(cc => cc.seats >= seats)?.id ??
-          defaultRecord.carClass :
-        state.carClass,
+      payload: currentCarClassData.seats < seats ?
+        availableCarClasses(state)?.find(cc => cc.seats >= seats)?.id ?? defaultRecord.carClass
+        : state.carClass,
     }, performedActions)
     return state
   }
@@ -157,7 +157,9 @@ export default function reducer(
     const locationClass = available.has(payload) ?
       payload :
       firstItem(available) ?? defaultRecord.locationClass
-    const carClassData = SITE_CONSTANTS.CAR_CLASSES[state.carClass]
+    // const carClassData = SITE_CONSTANTS.CAR_CLASSES[state.carClass]
+    const carClassData = SITE_CONSTANTS.CAR_CLASSES[state.carClass] ?? { seats: 1, booking_location_classes: null };
+
     state = state
       .set('locationClass', locationClass)
     state = reducer(state, {

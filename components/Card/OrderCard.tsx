@@ -30,8 +30,9 @@ import {
 } from '../../types/types';
 import { Loader } from '../loader/Loader';
 
-import { Image, StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
-import DollarMinimalistic from '../assets/default/dollarMinimalistic.svg';
+import { StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import DollarMinimalistic from '../../assets/GHA/dollarMinimalistic.svg';
+import SmartImage from '../SmartImage';
 
 
 interface DollarIconProps extends SvgProps {
@@ -203,7 +204,7 @@ function OrderCard({
         <View style={styles.statusCardCommentsP}>
           {formatCommentWithEmoji(order.b_comments)?.map(({ src }, index) => (
             // <Image key={index} source={src} style={styles.commentIcon} />
-            <Image key={index} source={{ uri: src }} style={styles.commentIcon} />
+            <SmartImage key={index} source={{ uri: src }} style={styles.commentIcon} />
 
           ))}
         </View>

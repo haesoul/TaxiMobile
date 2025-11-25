@@ -1,5 +1,5 @@
 import React from 'react'
-import { Image, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import images from '../../../constants/images'
 import { t, TRANSLATION } from '../../../localization'
@@ -33,11 +33,10 @@ const OrderPhone: React.FC<IProps> = ({ user, order }) => {
   return (
     <View style={styles.orderInfoPhone}>
       <View style={styles.orderFields}>
-        <Image
-          source={images.phone}
-          style={styles.image}
-          accessibilityLabel={t(TRANSLATION.PHONE)}
-        />
+
+        <View style={styles.image}>
+          <images.phone width={40} height={40}/>
+        </View>
 
         <View style={styles.labelContainer}>
           <Text style={styles.colored}>

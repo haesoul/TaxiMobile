@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import images from '../../constants/images';
 import { t, TRANSLATION } from '../../localization';
@@ -41,10 +41,11 @@ function MiniOrders({
   handleOrderClick,
 }: IProps) {
   if (!activeOrders?.length) return null;
-
+  
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.miniOrders}>
       {activeOrders.map(order => {
+        const OrderIconComponent = getOrderIcon(order) as React.FC<{ width?: number; height?: number }>;
         const payment = getPayment(order);
         const orderDriver = order?.drivers &&
           order.drivers?.find(item => item.c_state !== EBookingDriverState.Canceled);
@@ -72,18 +73,20 @@ function MiniOrders({
               )}
             </Text>
 
-            <Image source={images.stars} style={styles.starsImg} />
 
+            
+            <View style={styles.starsImg}>
+              <images.stars width={60} height={12}/>
+            </View>
             <Text style={styles.waitingTime}>
               {order.b_estimate_waiting || 0} {t(TRANSLATION.MINUTES)}
             </Text>
 
             <View style={styles.orderTypeRow}>
-              <Image
-                source={getOrderIcon(order)}
-                style={styles.orderTypeIcon}
-                resizeMode="contain"
-              />
+
+              <View style={styles.orderTypeIcon}>
+                <OrderIconComponent width={60} height={12}/>
+              </View>
               <Text style={styles.orderTypeText}>{getOrderCount(order)}</Text>
             </View>
 
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
 
     width: 150,
     backgroundColor: '#FFFFFF',
-    borderRadius: 13,
+    // borderRadius: 13,
     marginRight: 20,
     marginBottom: 18,
 

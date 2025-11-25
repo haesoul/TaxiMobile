@@ -4,20 +4,19 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import {
   ActivityIndicator,
-  Image,
   Linking,
   Modal,
   Alert as RNAlert,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 
+import { EDriverTabs } from '../../app/Driver'
 import images from '../../constants/images'
 import { t, TRANSLATION } from '../../localization'
-import { EDriverTabs } from '../../pages/Driver'
 import { CURRENCY } from '../../siteConstants'
 import { IRootState } from '../../state'
 import { modalsActionCreators, modalsSelectors } from '../../state/modals'
@@ -123,7 +122,7 @@ function CardModalContent({
   setActiveChat,
 }: ContentProps) {
   const router = useRouter()
-  const avatar = images.avatar
+  // const avatar = images.avatar
   const avatarSize = 48
 
   const closeModal = useCallback(() => {
@@ -212,7 +211,11 @@ function CardModalContent({
     await setOrderState(orderId, EBookingDriverState.Started)
     // navigate to driver-order map tab
     try {
-      router.push({ pathname: '/driver-order', params: { tab: 'map' } } as any)
+      router.push({
+        pathname: "/Order/[id]",
+        params: { id: orderId, tab: "map" },
+      });
+      
     } catch {
       // fallback: close modal
     }
@@ -222,7 +225,7 @@ function CardModalContent({
   const onCompleteOrderClick = () => orderMutation(async () => {
     await setOrderState(orderId, EBookingDriverState.Finished)
     try {
-      router.push({ pathname: '/driver-order', params: { tab: EDriverTabs.Lite } } as any)
+      router.push({ pathname: '/Order/[id]', params: { id: orderId, tab: EDriverTabs.Lite } } as any)
     } catch {}
     setRatingModal({ isOpen: true })
     closeModal()
@@ -386,8 +389,12 @@ function CardModalContent({
             {/* Top */}
             <View style={styles.topGrid}>
               <View style={styles.topAvatar as any}>
-                <Image source={{ uri: avatar }} style={[styles.cardImg, { width: avatarSize, height: avatarSize }]} />
+                <View style={[styles.cardImg]}>
+                  <images.avatar width={avatarSize} height={avatarSize}/>
+                </View>
+
               </View>
+
               <View style={styles.topName}>
                 <Text style={styles.topParagraph as any}>
                   {order?.user?.u_family?.trimStart()} {order?.user?.u_name?.trimStart()} {order?.user?.u_middle?.trimStart()}
@@ -473,7 +480,7 @@ function CardModalContent({
 
               <View style={styles.paymentSpecial as any}>
                 <Text>{t(TRANSLATION.PAYMENT_WAY)}: {_value}{order?.b_options?.pricingModel?.calculationType === 'incomplete' ? ' + ?' : ''}</Text>
-                <Text>{t(TRANSLATION.CALCULATION) + ': ' + calculateFinalPriceFormula(order)}</Text>
+                <Text>{t(TRANSLATION.ESTIMATE) + ': ' + calculateFinalPriceFormula(order)}</Text>
                 {order?.profit && <Text style={styles.statusCardProfit as any}>{formatCurrency(order.profit, { signDisplay: 'always' })}</Text>}
               </View>
             </View>
@@ -483,12 +490,20 @@ function CardModalContent({
             {/* Client comments */}
             <View style={styles.clientGrid as any}>
               <View style={styles.clientComments as any}>
-                {order?.u_id && formatCommentWithEmoji(order.b_comments)?.map((c, idx) => (
+                {order?.u_id && formatCommentWithEmoji(order.b_comments)?.map((c, idx) => {
+                  const Icon = c.src as unknown as React.FC<{ width?: number; height?: number }>;
+
+
+                  return (
                   <View key={idx} style={styles.clientCommentsP as any}>
-                    <Image source={{ uri: c.src }} style={styles.clientCommentsPImg as any} />
+                    {/* <Image source={{ uri: c.src }} style={styles.clientCommentsPImg as any} /> */}
+                    <Icon />
+                    
+
                     <Text style={styles.clientCommentsPSpanHidden as any}>{c.hint}</Text>
                   </View>
-                ))}
+                  )
+                })}
               </View>
 
               <View style={styles.statusCardSeats as any}>

@@ -23,7 +23,7 @@ interface IProps {
 }
 
 const OrderInfo: React.FC<IProps> = ({ order }) => {
-  if (!order) return null
+  if (!order) return <View style={[styles.orderInfo]}></View>
 
   return <View style={[styles.orderInfo]}>
     <OrderPhone order={order} />

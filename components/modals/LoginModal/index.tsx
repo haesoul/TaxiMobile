@@ -1,6 +1,6 @@
 // LoginModal.native.tsx
 import { useRoute } from '@react-navigation/native'; // react-navigation
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Modal,
   // SafeAreaView,
@@ -88,6 +88,7 @@ function LoginModal({
           style={{
             flex: 1,
             backgroundColor: 'rgba(0,0,0,0.5)',
+            
           }}
         />
       </TouchableWithoutFeedback>
@@ -121,8 +122,8 @@ function LoginModal({
             </Text>
 
             <View style={styles.loginSection}>
-              {useMemo(
-                () =>
+
+                {
                   _TABS.length > 0 && (
                     <Tabs
                       tabs={_TABS}
@@ -130,21 +131,19 @@ function LoginModal({
                       onChange={(id: string | number) => setTab(id as typeof tab)}
                       gradient={() => 'black'}
                     />
-                  ),
-                [_TABS, tab]
-              )}
+                  )
+                  }
 
-              {useMemo(
-                () =>
+                {
                   user ? (
                     <LogoutForm />
                   ) : tab === 'sign-in' ? (
                     <LoginForm isOpen={!!isOpen} />
                   ) : (
                     <RegisterComponent isOpen={!!isOpen} />
-                  ),
-                [user, tab, isOpen]
-              )}
+                  )
+                }
+                  
             </View>
           </View>
 

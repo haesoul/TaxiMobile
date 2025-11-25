@@ -20,7 +20,7 @@ import { modalsSelectors } from '../../state/modals'
 import { EMapModalTypes } from '../../state/modals/constants'
 import { orderSelectors } from '../../state/order'
 // import { getTileServerUrl } from '../../tools/utils'
-import { getTileServerUrl } from '../../tools/utils'
+import { TouchableOpacity } from 'react-native'
 import { IAddressPoint, IRouteInfo, IStaticMarker } from '../../types/types'
 import { Attribution } from '../Attribution'
 
@@ -50,6 +50,7 @@ interface IProps extends ReduxProps {
   onClose?: () => void
   containerClassName?: string
   setCenter?: (coordinates: [number, number]) => void
+  mapRef?: any
 }
 
 
@@ -60,6 +61,7 @@ function Map({
   containerClassName,
   ...props
 }: IProps) {
+  const mapRef = useRef<MapView | null>(null)
   SITE_CONSTANTS.init(store.getState().global.data);
   const centerLat = defaultCenter?.[0] ?? SITE_CONSTANTS.DEFAULT_POSITION[0]
   const centerLng = defaultCenter?.[1] ?? SITE_CONSTANTS.DEFAULT_POSITION[1]
@@ -84,15 +86,18 @@ function Map({
         provider={PROVIDER_GOOGLE}
         style={(styles as any).map}
         initialRegion={initialRegion}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
+        showsUserLocation={true}
+        showsMyLocationButton={true} 
         showsCompass={false}
         toolbarEnabled={false}
+        ref={mapRef}
+
       >
-        <MapContent
+        {/* <MapContent
           {...{ isOpen, defaultCenter, isModal, containerClassName }}
           {...props}
-        />
+          mapRef={mapRef} 
+        /> */}
       </MapView>
     </View>
   )
@@ -109,13 +114,15 @@ function MapContent({
   detailedOrderDestination,
   takePassengerFrom,
   takePassengerTo,
+  mapRef,
   disableButtons,
   isModal,
   onClose,
   containerClassName,
+
   setCenter = () => {},
 }: IProps) {
-  const mapRef = useRef<MapView | null>(null)
+  // const mapRef = useRef<MapView | null>(null)
 
   const [staticMarkers, setStaticMarkers] = useState<IStaticMarker[]>([])
   const [userCoordinates, setUserCoordinates] = useState<IAddressPoint | null>(null)
@@ -123,6 +130,9 @@ function MapContent({
   const [routeInfo, setRouteInfo] = useState<IRouteInfo | null>(null)
   const [showRouteInfo, setShowRouteInfo] = useState(false)
 
+
+  const API_KEY = "QLkO5SNOn90ffWtzmtQ5"
+  const tileUrl = `https://api.maptiler.com/maps/base-v4/?key=${API_KEY}`;
 
   let from: IAddressPoint | null = null
   let to: IAddressPoint | null = null
@@ -287,7 +297,34 @@ function MapContent({
     return () => { mounted = false }
   }, [from?.latitude, from?.longitude, to?.latitude, to?.longitude])
 
+  const goToUserLocation = useCallback(async () => {
+    try {
+      let coords = userCoordinates
 
+      if (!coords) {
+        const { status } = await Location.requestForegroundPermissionsAsync()
+        if (status !== 'granted') {
+          console.warn('Location permission not granted')
+          return
+        }
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest })
+        coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }
+        setUserCoordinates(coords)
+        setUserCoordinatesAccuracy(pos.coords.accuracy)
+      }
+
+      if (mapRef?.current && coords) {
+
+        mapRef.current.animateToRegion({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          ...defaultZoomDelta,
+        }, 600)
+      }
+    } catch (err) {
+      console.warn('goToUserLocation error', err)
+    }
+  }, [mapRef, userCoordinates])
   const routeCoordinates = routeInfo?.points?.map((p: [number, number]) => ({ latitude: p[0], longitude: p[1] })) ?? []
 
 
@@ -303,7 +340,7 @@ function MapContent({
     }
   }, [setCenter])
 
-  const tileUrl = getTileServerUrl?.()
+  // const tileUrl = getTileServerUrl?.()
 
   return (
     <>
@@ -318,6 +355,13 @@ function MapContent({
           zIndex={0}
         />
       ) : null}
+
+      <TouchableOpacity
+        onPress={goToUserLocation}
+        style={(styles as any).locateButton}
+      >
+        <Text style={{ fontWeight: '700' }}>{'Моё местоположение'}</Text>
+      </TouchableOpacity>
 
 
       {showRouteInfo && routeInfo && (
@@ -342,9 +386,9 @@ function MapContent({
         <>
           <Marker
             coordinate={{ latitude: userCoordinates.latitude, longitude: userCoordinates.longitude }}
-            title={t(TRANSLATION.YOU)}
+            title={t(TRANSLATION.NAME)}
 
-            image={images.activeMarker ? (typeof images.activeMarker === 'string' ? { uri: images.activeMarker } : images.activeMarker) : undefined}
+            image={images.activeMarkerPng ? (typeof images.activeMarkerPng === 'string' ? { uri: images.activeMarkerPng } : images.activeMarkerPng) : undefined}
           />
           {userCoordinatesAccuracy ? (
             <MapCircle
@@ -364,7 +408,7 @@ function MapContent({
           coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
           title={marker.popup}
           description={marker.tooltip}
-          image={images.activeMarker ? (typeof images.activeMarker === 'string' ? { uri: images.activeMarker } : images.activeMarker) : undefined}
+          image={images.activeMarkerPng ? (typeof images.activeMarkerPng === 'string' ? { uri: images.activeMarkerPng } : images.activeMarkerPng) : undefined}
         />
       ))}
 
@@ -374,7 +418,7 @@ function MapContent({
           coordinate={{ latitude: from.latitude, longitude: from.longitude }}
           title={t(TRANSLATION.FROM)}
           description={from.address ?? undefined}
-          image={images.markerFrom ? (typeof images.markerFrom === 'string' ? { uri: images.markerFrom } : images.markerFrom) : undefined}
+          image={images.markerFromPng ? (typeof images.markerFromPng === 'string' ? { uri: images.markerFromPng } : images.markerFromPng) : undefined}
         />
       )}
       {to?.latitude && to?.longitude && (
@@ -382,13 +426,13 @@ function MapContent({
           coordinate={{ latitude: to.latitude, longitude: to.longitude }}
           title={t(TRANSLATION.TO)}
           description={to.address ?? undefined}
-          image={images.markerTo ? (typeof images.markerTo === 'string' ? { uri: images.markerTo } : images.markerTo) : undefined}
+          image={images.markerToPng ? (typeof images.markerToPng === 'string' ? { uri: images.markerToPng } : images.markerToPng) : undefined}
         />
       )}
 
-      <MapView
+      {/* <MapView
         style={{ height: 0, width: 0 }}
-      />
+      /> */}
 
       <View style={{ position: 'absolute', bottom: 4, left: 0, right: 0 }}>
         <Attribution />
@@ -400,6 +444,7 @@ function MapContent({
 
 // export default Map
 export default connector(Map)
+
 
 
 
@@ -570,6 +615,17 @@ const styles =  StyleSheet.create({
     display: 'flex',
     marginTop: 32,
   },
+  locateButton: {
+    position: 'absolute',
+    right: 12,
+    bottom: 80,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    elevation: 3,
+    zIndex: 2000,
+  },
+  
 
   shadowLarge: Platform.select({
     ios: {
@@ -581,5 +637,6 @@ const styles =  StyleSheet.create({
     android: {
       elevation: 6,
     },
+    
   }) as any,
 })

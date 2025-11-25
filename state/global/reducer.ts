@@ -66,12 +66,7 @@ export const GlobalsRecord = ImmutableRecord<IGlobalsState>({
 });
 
 
-// export const ActionTypes = {
-//   SET_CONFIG: 'GLOBALS/SET_CONFIG',
-//   SET_SITE_CONSTANTS: 'GLOBALS/SET_SITE_CONSTANTS',
-//   SET_LANGS: 'GLOBALS/SET_LANGS',
-//   SET_PRELOADER: 'GLOBALS/SET_PRELOADER',
-// };
+
 
 export const ActionTypes = {
   SET_CONFIG: 'GLOBALS/SET_CONFIG',
@@ -97,20 +92,12 @@ export default function reducer(state = new GlobalsRecord(), action: TAction) {
 
     case ActionTypes.SET_PRELOADER:
       return state.set('preloader', payload);
-    
-    // case ActionTypes.SET_GLOBAL_DATA:
-    //   return state.update('data', data =>
-    //     Object.keys(payload).reduce((acc, key) => acc.set(key, payload[key]), data)
-    //   )
+      
 
     case ActionTypes.SET_GLOBAL_DATA:
       return state.update('data', (data: any) => ({ ...data, ...payload }));
     
-    // case ActionTypes.SET_GLOBAL_DATA:
-    //   return state.set(
-    //     'data',
-    //     Immutable.fromJS(state.data).mergeDeep(Immutable.fromJS(payload)).toJS()
-    //   );
+   
 
     default:
       return state;
@@ -141,4 +128,5 @@ export const setGlobalData = (payload: Record<string, any>) => ({
   type: ActionTypes.SET_GLOBAL_DATA,
   payload,
 });
+
 

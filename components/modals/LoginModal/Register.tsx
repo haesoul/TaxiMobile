@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import {
-  Image,
   Alert as RNAlert,
   ScrollView,
   Switch,
@@ -28,6 +27,7 @@ import { getPhoneError } from '../../../tools/utils'
 import { EStatuses, EUserRoles, EWorkTypes, IRequiredFields, TFilesMap } from '../../../types/types'
 import styles from './STYLES'
 
+import SmartImage from '@/components/SmartImage'
 import { useRoute } from '@react-navigation/native'
 
 /** Redux mapping (оставил как было) */
@@ -153,7 +153,7 @@ const RNFilePicker: React.FC<{ onChange: (files: any[]) => void, multiple?: bool
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
       if (!permission.granted) {
-        RNAlert.alert(t(TRANSLATION.PERMISSION_DENIED) || 'Permission denied')
+        RNAlert.alert(t(TRANSLATION.UNAUTHORIZED_ACCESS) || 'Permission denied')
         return
       }
 
@@ -195,11 +195,11 @@ const RNFilePicker: React.FC<{ onChange: (files: any[]) => void, multiple?: bool
   return (
     <View style={{ marginBottom: 10 }}>
       <TouchableOpacity onPress={pickImage} style={[styles.workTypeButton]}>
-        <Text>{t(TRANSLATION.PICK_IMAGE) || 'Pick Image'}</Text>
+        <Text>{t(TRANSLATION.ADD_IMAGES) || 'Pick Image'}</Text>
       </TouchableOpacity>
       <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
         {(value || []).map((f: any, idx: number) => (
-          <Image key={idx} source={{ uri: f.uri }} style={{ width: 64, height: 64, marginRight: 8, borderRadius: 6 }} />
+          <SmartImage key={idx} source={{ uri: f.uri }} style={{ width: 64, height: 64, marginRight: 8, borderRadius: 6 }} />
         ))}
       </View>
     </View>
@@ -454,7 +454,7 @@ const RegisterForm: React.FC<ConnectedProps<typeof connector> & { isOpen?: boole
           name="car_model" // we use this controller to display workType select behavior (original used simple select)
           render={({ field }) => (
             <View style={{ marginBottom: 12 }}>
-              <RNFieldLabel label={t(TRANSLATION.WORK_TYPE) || 'Work type'} />
+              <RNFieldLabel label={t(TRANSLATION.YOUR_WORK_TYPE) || 'Work type'} />
               <RNSelect
                 value={String(workType ?? '')}
                 onChange={(v: any) => {
@@ -464,7 +464,7 @@ const RegisterForm: React.FC<ConnectedProps<typeof connector> & { isOpen?: boole
                   { label: t(TRANSLATION.SELF_EMPLOYED), value: EWorkTypes.Self },
                   { label: t(TRANSLATION.COMPANY), value: EWorkTypes.Company },
                 ]}
-                placeholder={t(TRANSLATION.SELECT) || 'Select'}
+                placeholder={t(TRANSLATION.SELECT_ONE_OPTION_FROM_THE_LIST) || 'Select'}
               />
             </View>
           )}
@@ -638,7 +638,7 @@ const RegisterForm: React.FC<ConnectedProps<typeof connector> & { isOpen?: boole
             render={({ field: { onChange, value } }) => (
               <>
                 <RNFieldLabel label={'Car models'} />
-                <RNSelect value={value} onChange={onChange} options={prepareOptions(data?.car_models, TRANSLATION.CAR_MODELS)} placeholder={t(TRANSLATION.SELECT)} />
+                <RNSelect value={value} onChange={onChange} options={prepareOptions(data?.car_models, TRANSLATION.CAR_MODELS)} placeholder={t(TRANSLATION.SELECT_ONE_OPTION_FROM_THE_LIST)} />
               </>
             )}
           />

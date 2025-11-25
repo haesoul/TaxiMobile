@@ -262,7 +262,7 @@ class Constants {
     this.DEFAULT_BOOKING_LOCATION_CLASS = this.BOOKING_LOCATION_CLASSES[0]?.id ?? '-1';
 
     // this.LANGUAGES = parseLanguages((globals.data?.langs || defaultValues.LANGUAGES))
-    console.log('CONSTANTS LANGUAGES', this.LANGUAGES)
+
   }
 
   calc_ENABLE_CUSTOMER_PRICE() {

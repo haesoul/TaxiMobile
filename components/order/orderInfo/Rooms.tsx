@@ -1,5 +1,6 @@
+import SmartImage from '@/components/SmartImage'
 import React from 'react'
-import { Image, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import furniture, { IFurnitureItem } from '../../../constants/furniture'
 import images from '../../../constants/images'
 import rooms from '../../../constants/rooms'
@@ -35,7 +36,7 @@ const Rooms: React.FC<IProps> = ({ order }) => {
                   return (
                     <Text key={key} style={styles.furnitureItem}>
                       {index !== 0 && ', '}
-                      <Image
+                      <SmartImage
                         source={foundFurniture.image}
                         style={styles.furnitureImage}
                         accessibilityLabel={t(foundFurniture.label)}
@@ -71,7 +72,7 @@ const Rooms: React.FC<IProps> = ({ order }) => {
                   return (
                     <Text key={key} style={styles.furnitureItem}>
                       {index !== 0 && ', '}
-                      <Image
+                      <SmartImage
                         source={foundFurniture.image}
                         style={styles.furnitureImage}
                         accessibilityLabel={t(foundFurniture.label)}

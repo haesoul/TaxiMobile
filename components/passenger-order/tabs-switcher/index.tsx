@@ -39,7 +39,7 @@ export const TABS = {
   },
   WAGON: { id: 'wagon', sid: 6, label: TRANSLATION.WAGON, image: 'bigTruck' },
   TRIP: { id: 'trip', sid: 7, label: TRANSLATION.TRIP, image: 'bigTruck' },
-  WASH: { id: 'wash', sid: 8, label: TRANSLATION.CAR_WASH, image: 'carWash' },
+  WASH: { id: 'wash', sid: 8, label: TRANSLATION.WASHER, image: 'carWash' },
 }
 
 interface IProps {

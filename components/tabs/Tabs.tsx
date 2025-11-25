@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import SmartImage from '../SmartImage';
 
 export interface ITab {
   id: string | number;
@@ -42,7 +43,7 @@ const Tabs: React.FC<IProps> = ({
           >
             {item.img && (
               <View style={styles.img}>
-                <Image
+                <SmartImage
                   source={{ uri: item.img }}
                   resizeMode="contain"
                   style={styles.imgInner}

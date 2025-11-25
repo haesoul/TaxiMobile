@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { Image, TouchableOpacity } from 'react-native'
+import { TouchableOpacity } from 'react-native'
 import { connect, ConnectedProps } from 'react-redux'
 import * as API from '../../API'
 import images from '../../constants/images'
@@ -71,7 +71,7 @@ function LocationInput({
 
   const locationClassData = SITE_CONSTANTS.BOOKING_LOCATION_CLASSES
     ?.find(({ id }: any) => id === locationClass)!
-  const isIntercity = locationClassData.kind === EBookingLocationKinds.Intercity
+  const isIntercity = locationClassData?.kind === EBookingLocationKinds.Intercity
 
   useEffect(() => {
     debouncedGetPointSuggestion(setSuggestions, point?.address, isIntercity)
@@ -108,12 +108,14 @@ function LocationInput({
         point?.shortAddress ?
           buttons.map((btn, i) => (
             <TouchableOpacity key={i} onPress={btn.onPress}>
-              <Image source={btn.src} />
+              {/* <Image source={btn.src} /> */}
+              <btn.src />
             </TouchableOpacity>
           )) :
           buttons.slice(1).map((btn, i) => (
             <TouchableOpacity key={i} onPress={btn.onPress}>
-              <Image source={btn.src} />
+              {/* <Image source={btn.src} /> */}
+              <btn.src />
             </TouchableOpacity>
           ))
       }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { connect, ConnectedProps } from 'react-redux';
 import images from '../../constants/images';
 import { t, TRANSLATION } from '../../localization';
@@ -48,11 +48,10 @@ const AlarmModal: React.FC<Props> = ({
           <Text style={styles.modalFieldsetLegend}>{t(TRANSLATION.ALARM)}</Text>
 
           <View style={styles.timerModal}>
-            <Image
-              source={images.timer}
-              style={styles.timerModalButton}
-              resizeMode="contain"
-            />
+
+            <View style={styles.timerModalButton}>
+              <images.timer />
+            </View>
             <Text style={styles.timerModalButtonText}>
               {t(TRANSLATION.ESTIMATE)}{' '}
               <Text style={styles.timerModalButtonText}>{seconds}</Text>{' '}

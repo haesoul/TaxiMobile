@@ -69,7 +69,9 @@ const FurnitureRow: React.FC<IProps> = ({ id, value, onChange, onChoose }) => {
       <View style={styles.furnitureChangeWrapper}>
         {!onChoose && (
           <Pressable onPress={handleDecrement}>
-            <Image source={images.minusIcon as any} style={styles.furnitureChangeButton} />
+            <View style={styles.furnitureChangeButton}>
+              <images.minusIcon width={25} height={25}  />
+            </View>
           </Pressable>
         )}
 
@@ -84,7 +86,9 @@ const FurnitureRow: React.FC<IProps> = ({ id, value, onChange, onChoose }) => {
 
         {!onChoose && (
           <Pressable onPress={handleIncrement}>
-            <Image source={images.plusIcon as any} style={styles.furnitureChangeButton} />
+            <View style={styles.furnitureChangeButton}>
+              <images.plusIcon width={25} height={25}  />
+            </View>
           </Pressable>
         )}
       </View>

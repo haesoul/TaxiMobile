@@ -325,6 +325,8 @@ export function getPayment(
   if (carClass === undefined)
     carClass = order?.b_car_class
   const carClassData = carClass ? SITE_CONSTANTS.CAR_CLASSES[carClass] : null
+  // const carClassData = carClass ? SITE_CONSTANTS.CAR_CLASSES[carClass] : { seats: 1, booking_location_classes: null }
+
   const callRate = carClassData?.courier_call_rate ??
     SITE_CONSTANTS.COURIER_CALL_RATE
   const farePer1Km = carClassData?.courier_fare_per_1_km ??

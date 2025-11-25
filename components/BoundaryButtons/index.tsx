@@ -25,7 +25,7 @@ const connector = connect(mapStateToProps, mapDispatchToProps)
 
 interface IProps extends ConnectedProps<typeof connector> {}
 
-export default function BoundaryButtons({
+function BoundaryButtons({
   locationClasses,
   locationClass,
   setLocationClass,
@@ -158,6 +158,7 @@ export function IntercityIcon({ active }: { active: boolean }) {
     </Svg>
   );
 }
+export default connector(BoundaryButtons)
 
 export function LocationIcon({ active }: { active: boolean }) {
   const color = active ? 'white' : '#BDBDBD';
